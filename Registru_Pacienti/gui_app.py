@@ -1,12 +1,11 @@
 import tkinter
 from tkinter import *
-from tkinter import ttk
 from tkinter import messagebox
+from tkinter import ttk
 import sqlite3
 import os
-from PIL import Image, ImageTk
 import constants_pacienti
-from tkcalendar import Calendar
+from tkcalendar import Calendar, DateEntry
 from checkers_sql import CheckSqlCommands
 from checker_fields import CheckFields
 from excel_writer import ExcelWriter
@@ -317,7 +316,7 @@ class GuiApp:
         root_add.iconbitmap(image_ico)
         root_add.geometry("1200x900")
         root_add["bg"] = "#5BBD2A"
-        root_add.resizable(0, 0)
+        root_add.resizable(NO, NO)
         # stringvar variables
         judet_value = StringVar()
         judet_value.set("SV-Suceava")
@@ -658,6 +657,395 @@ class GuiApp:
         root_add.mainloop()
 
     '''
+    DELETE PART
+    '''
+
+    def sql_delete(self, table_name, option, select_date, first_name, last_name, cnp):
+        # args are first name and last name
+        '''SQL COMMAND'''
+        database = os.path.join(constants_pacienti.DATABASE_FOLDER, constants_pacienti.NAME_DATABASE)
+        connection = sqlite3.connect(database)
+        my_cursor = connection.cursor()
+        # check selected option to see what queries to execute
+        if option == "Data":
+            my_cursor.execute("""DELETE FROM """ + table_name + """ WHERE DATA = :data""",
+                              # dummy dictionary
+                              {
+                                  "data": select_date
+                              })
+        elif option == "Nume":
+            my_cursor.execute(
+                """DELETE FROM """ + table_name + """ WHERE PRENUME = :first_name AND NUME = :last_name""",
+                # dummy dictionary
+                {
+                    "first_name": first_name.upper(),
+                    "last_name": last_name.upper()
+                })
+        elif option == "Cnp":
+            my_cursor.execute("""DELETE FROM """ + table_name + """ WHERE CNP = :cnp_value""",
+                              # dummy dictionary
+                              {
+                                  "cnp_value": cnp
+                              })
+        connection.commit()
+        if option == "Data":
+            message_delete = "Pacientii din data de {} au fost stersi".format(select_date)
+            messagebox.showinfo("PACIENT STERS", message=message_delete)
+        elif option == "Nume":
+            message_delete = "Pacientul {} {} a fost sters din baza de date".format(first_name, last_name)
+            messagebox.showinfo("PACIENT STERS", message=message_delete)
+        elif option == "Cnp":
+            message_delete = "Pacientul cu cnp {} a fost sters din baza de date".format(cnp)
+            messagebox.showinfo("PACIENT STERS", message=message_delete)
+        root_delete_treeview.destroy()
+        self.create_main_gui()
+
+    def cancel_treeview_delete(self):
+        root_delete_treeview.destroy()
+        self.create_main_gui()
+
+    def view_delete_records(self, table_name, option, select_date, first_name, last_name, cnp):
+        '''MAKE CHECKS'''
+        # 1.check button is pressed
+        if self.checker_field.check_radiobutton_pressed(option):
+            messagebox.showerror("NICI O SELECTIE", "VA ROG SELECTATI O OPTIUNE DE CAUTARE")
+            return
+        # 2. check if date is selected
+        if option == "Data":
+            if self.checker_field.check_if_date_selected(select_date):
+                messagebox.showerror("DATA NESELECTATA", "VA ROG SELECTATI DATA")
+                return
+        # 3. check last and first name
+        if option == "Nume":
+            option_error, message_error = self.checker_field.check_if_first_last_name_entered(first_name, last_name)
+            if option_error == 1:
+                messagebox.showerror("CAMPURI NECOMPLETATE", message=message_error)
+                return
+            elif option_error == 2:
+                messagebox.showerror("NUME NECOMPLETAT", message=message_error)
+                return
+            elif option_error == 3:
+                messagebox.showerror("PRENUME NECOMPLETAT", message=message_error)
+                return
+        # 4. check cnp
+        if option == "Cnp":
+            if self.checker_field.check_cnp_complete(cnp):
+                messagebox.showerror("CNP NECOMPLETAT", "VA ROG COMPLETATI CNP-UL")
+                return
+            cnp_message_error, cnp_option_error = self.checker_field.get_cnp_errors(cnp)
+            if cnp_option_error == 1:
+                messagebox.showerror("CNP INVALID", message=cnp_message_error)
+                return
+            elif cnp_option_error == 2:
+                messagebox.showerror("CNP INVALID", message=cnp_message_error)
+                return
+            elif cnp_option_error == 3:
+                messagebox.showerror("CNP INVALID", message=cnp_message_error)
+                return
+        '''SQL COMMAND'''
+        database = os.path.join(constants_pacienti.DATABASE_FOLDER, constants_pacienti.NAME_DATABASE)
+        connection = sqlite3.connect(database)
+        my_cursor = connection.cursor()
+        # check selected option to see what queries to execute
+        if option == "Data":
+            my_cursor.execute("""SELECT oid,* FROM """ + table_name + """ WHERE DATA=:data""",
+                              # dummy dictionary
+                              {
+                                  "data": select_date
+                              })
+        elif option == "Nume":
+            my_cursor.execute(
+                """SELECT oid,* FROM """ + table_name + """ WHERE PRENUME=:first_name AND NUME=:last_name""",
+                # dummy dictionary
+                {
+                    "first_name": first_name.upper(),
+                    "last_name": last_name.upper()
+                })
+        elif option == "Cnp":
+            my_cursor.execute("""SELECT oid,* FROM """ + table_name + """ WHERE CNP=:cnp_value""",
+                              # dummy dictionary
+                              {
+                                  "cnp_value": cnp
+                              })
+        # get list of results and check if we have such records
+        list_results = my_cursor.fetchall()
+        if len(list_results) == 0:
+            messagebox.showerror("PACIENT NEEXISTENT", "CAUTAREA NU A PRODUS NICI UN REZULTAT CU ACESTE CONDITII")
+            return
+        '''CREATE THE GUI WITH THE TREEVIEW OF RECORDS'''
+        root_delete.destroy()
+        global root_delete_treeview
+        root_delete_treeview = Tk()
+        root_delete_treeview.title("DELETE")
+        image_ico = os.path.join(self.pictures_folder, constants_pacienti.PICTURE_FOLDER,
+                                 constants_pacienti.SOMN_ICO_IMAGE)
+        root_delete_treeview.iconbitmap(image_ico)
+        root_delete_treeview.geometry("850x500")
+        root_delete_treeview["bg"] = "#BC6678"
+        root_delete_treeview.resizable(NO, NO)
+        root_delete_treeview.protocol("WM_DELETE_WINDOW", self.cancel_x_button)
+        # treeview creation
+        frame_treeview = LabelFrame(root_delete_treeview, fg="#EEEBF3", bg="#BC6678", font=("Helvetica", 20, "bold"),
+                                    bd=5,
+                                    cursor="target", width=800, height=425, labelanchor="n", text="STERGERE PACIENT",
+                                    relief=tkinter.GROOVE)
+        frame_treeview.grid(padx=25, pady=10, row=0, column=0, )  # put it in the middle
+        frame_treeview.grid_rowconfigure(0, weight=1)
+        frame_treeview.grid_columnconfigure(0, weight=1)
+        # create tree to show footballers
+        columns = ("ID", "PRENUME", "NUME", "CNP", "APNEE", "TIP_APNEE", "PRESIUNE")
+        tree_patients = ttk.Treeview(frame_treeview, show='headings', columns=columns, height=15, )
+        # ADD THE COLUMNS
+        # define the headings
+        tree_patients.heading(0, text="ID", anchor=tkinter.W)
+        tree_patients.heading(1, text="PRENUME", anchor=tkinter.W)
+        tree_patients.heading(2, text="NUME", anchor=tkinter.W)
+        tree_patients.heading(3, text="CNP", anchor=tkinter.W)
+        tree_patients.heading(4, text="APNEE", anchor=tkinter.W)
+        tree_patients.heading(5, text="TIP_APNEE", anchor=tkinter.W)
+        tree_patients.heading(6, text="PRESIUNE", anchor=tkinter.W)
+        # redefine column dimensions
+        tree_patients.column("ID", width=25, )
+        tree_patients.column("PRENUME", width=125, stretch=NO)
+        tree_patients.column("NUME", width=125, stretch=NO)
+        tree_patients.column("CNP", width=100, stretch=NO)
+        tree_patients.column("APNEE", width=50, stretch=NO)
+        tree_patients.column("TIP_APNEE", width=100, stretch=NO)
+        tree_patients.column("PRESIUNE", width=125, stretch=NO)
+        tree_patients.tag_configure("orow")
+        # create a custom style
+        style = ttk.Style(root_delete_treeview)
+        style.theme_use("clam")
+        style.configure("Treeview.Heading", background="#D4EE77", foreground="#4ECDC0")
+        # populate the list
+        for record in list_results:
+            record_update = list()
+            record_update.append(str(record[0]))
+            record_update.append(record[2])
+            record_update.append(record[3])
+            record_update.append(record[4])
+            record_update.append(record[14])
+            record_update.append(record[15])
+            record_update.append(record[18])
+            record_update_tuple = tuple(record_update)
+            tree_patients.insert('', tkinter.END, values=record_update_tuple)
+        # put the treeview on the frame
+        tree_patients.place(x=60, y=10)
+        # create a scrollbar
+        my_scrollbar = Scrollbar(frame_treeview, orient=tkinter.VERTICAL, command=tree_patients.yview)
+        tree_patients.configure(yscrollcommand=my_scrollbar.set)
+        my_scrollbar.place(x=713, y=11, height=328)
+        # add buttons for cancel and delete
+        ok_button = Button(frame_treeview, text="DELETE", width=20, height=2, fg="#1E2729", bg="#248B48",
+                           font=("Helvetica", 9, "bold"),
+                           command=lambda: self.sql_delete(self.table_name, option, select_date, first_name, last_name,
+                                                           cnp))
+        cancel_button = Button(frame_treeview, text="CANCEL", width=20, height=2, fg="#1E2729", bg="#E8E7D8",
+                               font=("Helvetica", 9, "bold"), command=self.cancel_treeview_delete)
+        ok_button.place(x=150, y=343)
+        cancel_button.place(x=480, y=343)
+
+    def handle_radio_button_date(self, value_date, *args):
+        # value_date = selection_option1
+        if args[0] == value_date:
+            # first we make the calendar available
+            args[1]["state"] = tkinter.NORMAL
+            # delete all other entries
+            args[2]["state"] = tkinter.NORMAL
+            args[3]["state"] = tkinter.NORMAL
+            args[4]["state"] = tkinter.NORMAL
+            args[2].delete(0, END)
+            args[3].delete(0, END)
+            args[4].delete(0, END)
+            # make them  disabled again
+            args[2]["state"] = tkinter.DISABLED
+            args[3]["state"] = tkinter.DISABLED
+            args[4]["state"] = tkinter.DISABLED
+
+    def handle_radio_button_cnp(self, value_cnp, *args):
+        # value_cnp = selection_option3
+        if args[0] == value_cnp:
+            # first we make the cnpo enabled
+            args[1]["state"] = tkinter.NORMAL
+            # reset calendar and make it disabled
+            args[2]["state"] = tkinter.NORMAL
+            args[2].delete(0, END)
+            args[2]["state"] = tkinter.DISABLED
+            # delete the first and last name and make them disabled
+            args[3]["state"] = tkinter.NORMAL
+            args[4]["state"] = tkinter.NORMAL
+            args[3].delete(0, END)
+            args[4].delete(0, END)
+            # make them  disabled again
+            args[3]["state"] = tkinter.DISABLED
+            args[4]["state"] = tkinter.DISABLED
+
+    def handle_radio_button_name(self, value_name, *args):
+        # value_name = selection_option2
+        if args[0] == value_name:
+            # first we make the first and last name states enabled
+            args[1]["state"] = tkinter.NORMAL
+            args[2]["state"] = tkinter.NORMAL
+            # delete the calendar date ane make it unavailable
+            args[3]["state"] = tkinter.NORMAL
+            args[3].delete(0, END)
+            args[3]["state"] = tkinter.DISABLED
+            # delete cnp and make it disabled
+            args[4]["state"] = tkinter.NORMAL
+            args[4].delete(0, END)
+            args[4]["state"] = tkinter.DISABLED
+
+    def cancel_form_delete(self):
+        root_delete.destroy()
+        self.create_main_gui()
+
+    def create_delete_gui(self):
+        global root_delete
+        app_menu.destroy()
+        # global variables
+        global radio_button_date
+        global radio_button_name
+        global radio_button_cnp
+        global calendar_entry
+        global first_name_entry_delete
+        global last_name_entry_delete
+        global cnp_entry_delete
+        global selection_option
+
+        root_delete = Tk()
+        root_delete.title("DELETE")
+        image_ico = os.path.join(self.pictures_folder, constants_pacienti.PICTURE_FOLDER,
+                                 constants_pacienti.SOMN_ICO_IMAGE)
+        root_delete.iconbitmap(image_ico)
+        root_delete.geometry("1020x330")
+        root_delete["bg"] = "#BC6678"
+        root_delete.resizable(NO, NO)
+        root_delete.protocol("WM_DELETE_WINDOW", self.cancel_x_button)
+        # stringvars
+        selection_option = StringVar()
+        # put values for radiobuttons
+        selection_option1 = "Data"
+        selection_option2 = "Nume"
+        selection_option3 = "Cnp"
+        frame_title = LabelFrame(root_delete, fg="#EEEBF3", bg="#BC6678", font=("Helvetica", 20, "bold"), bd=5,
+                                 cursor="target", width=920, height=300, labelanchor="n", text="STERGERE PACIENT",
+                                 relief=tkinter.GROOVE)
+        frame_title.grid(padx=10, pady=10, row=0, column=0, )  # put it in the middle
+        frame_title.grid_rowconfigure(0, weight=1)
+        frame_title.grid_columnconfigure(0, weight=1)
+        # add frame for date
+        frame_date = LabelFrame(frame_title, fg="#EEEBF3", bg="#BC6678", font=("Helvetica", 15, "bold"),
+                                bd=5,
+                                cursor="target", width=230, height=200, labelanchor="n",
+                                text="SELECTIE DATA",
+                                relief=tkinter.GROOVE)
+        frame_date.place(x=30, y=10)
+        calendar_entry = DateEntry(frame_date, selectmode='day', date_pattern="DD-MM-YYYY", bd=2,
+                                   headersbackground="#EBFE8A",
+                                   headersforeground="#1E1F1C", selectbackground="#209DBF", selectforeground="#F26B18",
+                                   weekendbackground="#8D7B80", font=("Helvetica", 9, "bold"), bg="#9EEB8D")
+        calendar_entry.state(["disabled"])
+        calendar_entry.place(x=80, y=20)
+        calendar_entry_label = Label(frame_date, text="DATA", justify="center",
+                                     font=("Helvetica", 11, "bold"),
+                                     cursor="star", fg="#B9DBDA", bg="#BC6678")
+        calendar_entry_label.place(x=20, y=20)
+        # add frame for first and last name
+        frame_first_last_name = LabelFrame(frame_title, fg="#EEEBF3", bg="#BC6678", font=("Helvetica", 15, "bold"),
+                                           bd=5,
+                                           cursor="target", width=230, height=200, labelanchor="n",
+                                           text="SELECTIE NUME",
+                                           relief=tkinter.GROOVE)
+        frame_first_last_name.place(x=280, y=10)
+        first_name_entry_delete = Entry(frame_first_last_name, width=18, justify="center",
+                                        font=("Helvetica", 8, "bold"),
+                                        cursor="target",
+                                        bg="#9EEB8D", state=tkinter.DISABLED)
+        first_name_entry_delete.place(x=100, y=40)
+        first_name_label = Label(frame_first_last_name, text="PRENUME", justify="center",
+                                 font=("Helvetica", 11, "bold"),
+                                 cursor="star", fg="#B9DBDA", bg="#BC6678")
+        first_name_label.place(x=5, y=40)
+        last_name_entry_delete = Entry(frame_first_last_name, width=18, justify="center",
+                                       font=("Helvetica", 8, "bold"),
+                                       cursor="target",
+                                       bg="#9EEB8D", state=tkinter.DISABLED)
+        last_name_entry_delete.place(x=100, y=100)
+        last_name_label = Label(frame_first_last_name, text="NUME", justify="center",
+                                font=("Helvetica", 11, "bold"),
+                                cursor="star", fg="#B9DBDA", bg="#BC6678")
+        last_name_label.place(x=5, y=100)
+        # add frame for cnp
+        frame_cnp = LabelFrame(frame_title, fg="#EEEBF3", bg="#BC6678", font=("Helvetica", 15, "bold"),
+                               bd=5,
+                               cursor="target", width=230, height=200, labelanchor="n",
+                               text="SELECTIE CNP",
+                               relief=tkinter.GROOVE)
+        frame_cnp.place(x=530, y=10)
+        cnp_entry_delete = Entry(frame_cnp, width=20, justify="center",
+                                 font=("Helvetica", 8, "bold"),
+                                 cursor="target",
+                                 bg="#9EEB8D", state=tkinter.DISABLED)
+        cnp_entry_delete.place(x=80, y=60)
+        cnp_label = Label(frame_cnp, text="CNP", justify="center",
+                          font=("Helvetica", 11, "bold"),
+                          cursor="star", fg="#B9DBDA", bg="#BC6678")
+        cnp_label.place(x=5, y=60)
+        # create frame for checkbuttons
+        check_frame = LabelFrame(frame_title, fg="#EEEBF3", bg="#BC6678", font=("Helvetica", 15, "bold"),
+                                 bd=5,
+                                 cursor="target", width=100, height=200, labelanchor="n",
+                                 text="CHECK",
+                                 relief=tkinter.GROOVE)
+        check_frame.place(x=780, y=10)
+        # put radiobuttons
+        radio_button_date = Radiobutton(check_frame, text="DATE", variable=selection_option,
+                                        value=selection_option1,
+                                        bd=5, font=("Helvetica", 11, "bold"),
+                                        bg="#BC6678", fg="#EEEBF3", selectcolor="black",
+                                        command=lambda: self.handle_radio_button_date(selection_option1,
+                                                                                      selection_option.get(),
+                                                                                      calendar_entry,
+                                                                                      first_name_entry_delete,
+                                                                                      last_name_entry_delete,
+                                                                                      cnp_entry_delete))
+        radio_button_date.place(x=5, y=20)
+        radio_button_name = Radiobutton(check_frame, text="NUME", variable=selection_option,
+                                        value=selection_option2,
+                                        bd=5, font=("Helvetica", 11, "bold"),
+                                        bg="#BC6678", fg="#EEEBF3", selectcolor='black',
+                                        command=lambda: self.handle_radio_button_name(selection_option2,
+                                                                                      selection_option.get(),
+                                                                                      first_name_entry_delete,
+                                                                                      last_name_entry_delete,
+                                                                                      calendar_entry,
+                                                                                      cnp_entry_delete))
+
+        radio_button_name.place(x=5, y=70)
+        radio_button_cnp = Radiobutton(check_frame, text="CNP", variable=selection_option,
+                                       value=selection_option3,
+                                       bd=5, font=("Helvetica", 11, "bold"),
+                                       bg="#BC6678", fg="#EEEBF3", selectcolor='black',
+                                       command=lambda: self.handle_radio_button_name(selection_option3,
+                                                                                     selection_option.get(),
+                                                                                     cnp_entry_delete,
+                                                                                     calendar_entry,
+                                                                                     first_name_entry_delete,
+                                                                                     last_name_entry_delete))
+        radio_button_cnp.place(x=5, y=120)
+        # put ok and cancel buttons
+        ok_button = Button(frame_title, text="VIZUALIZARE", width=30, height=2, fg="#1E2729", bg="#248B48",
+                           font=("Helvetica", 9, "bold"),
+                           command=lambda: self.view_delete_records(self.table_name, selection_option.get(),
+                                                                    calendar_entry.get(), first_name_entry_delete.get(),
+                                                                    last_name_entry_delete.get(),
+                                                                    cnp_entry_delete.get()))
+        cancel_button = Button(frame_title, text="CANCEL", width=30, height=2, fg="#1E2729", bg="#E8E7D8",
+                               font=("Helvetica", 9, "bold"), command=self.cancel_form_delete)
+        ok_button.place(x=150, y=215)
+        cancel_button.place(x=500, y=215)
+
+    '''
     Main gui creation
     Using canvas to put picture
     '''
@@ -677,7 +1065,7 @@ class GuiApp:
                                  constants_pacienti.SOMN_ICO_IMAGE)
         app_menu.iconbitmap(image_ico)
         app_menu.geometry("850x500")
-        app_menu.resizable(0, 0)
+        app_menu.resizable(NO, NO)
         app_menu["bg"] = "#36EBCA"
         # create image
         image_canvas = PhotoImage(file=image_canvas)
@@ -698,16 +1086,15 @@ class GuiApp:
                                cursor="target", width=20, height=2, justify="center", text="VIZUALIZARE/EDITARE",
                                relief=tkinter.GROOVE)
         # command=self.open_edit)
-        delete_button = Button(app_menu, fg="#EEEBF3", bg="#C9334F", font=("Helvetica", 9, "bold"), bd=4,
+        delete_button = Button(app_menu, fg="#EEEBF3", bg="#BC6678", font=("Helvetica", 9, "bold"), bd=4,
                                cursor="target", width=20, height=2, justify="center", text="STERGERE",
-                               relief=tkinter.GROOVE)
-        # command=self.open_delete)
+                               relief=tkinter.GROOVE, command=self.create_delete_gui)
         convert_excel_all = Button(app_menu, fg="#EEEBF3", bg="#F36D1C", font=("Helvetica", 9, "bold"), bd=4,
                                    cursor="target", width=20, height=2, justify="center",
                                    text="TRANSFER EXCEL DATE ",
-                                   relief=tkinter.GROOVE,command=lambda:self.writer.write_to_excel(self.table_name))
+                                   relief=tkinter.GROOVE, command=lambda: self.writer.write_to_excel(self.table_name))
 
-        cancel_button = Button(app_menu, fg="#EEEBF3", bg="#C9334F", font=("Helvetica", 9, "bold"), bd=4,
+        cancel_button = Button(app_menu, fg="#EEEBF3", bg="#E10E3A", font=("Helvetica", 9, "bold"), bd=4,
                                cursor="target", width=66, height=2, justify="center", text="INCHIDERE",
                                relief=tkinter.GROOVE, command=self.close_main_gui)
         # command=self.open_delete)

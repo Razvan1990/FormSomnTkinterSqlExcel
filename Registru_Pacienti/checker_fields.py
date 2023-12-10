@@ -23,7 +23,6 @@ class CheckFields:
 
     def get_cnp_errors(self, cnp):
         # in the sql_add function we will check if the option is different from 0
-        global message
         message = ""
         option = 0
         if len(cnp) != 13:
@@ -38,7 +37,6 @@ class CheckFields:
         return message, option
 
     def get_telephone_number_errors(self, tel_number):
-        global message
         message = ""
         option = 0
         # the only check to do is just to see if there are numbers
@@ -49,5 +47,34 @@ class CheckFields:
 
     def check_buttons_selected(self, button1_value, button2_value):
         if button1_value == "" and button2_value == "":
+            return True
+        return False
+
+    def check_radiobutton_pressed(self, radiobutton_value):
+        if radiobutton_value == "":
+            return True
+        return False
+
+    def check_if_date_selected(self, date):
+        if date == "":
+            return True
+        return False
+
+    def check_if_first_last_name_entered(self, first_name, last_name):
+        message = ""
+        option = 0
+        if last_name == "" and first_name == "":
+            message = "VA ROG COMPLETATI CAMPURILE DE PRENUME SI NUME"
+            option = 1
+        elif last_name == "":
+            message = "VA ROG COMPLETATI NUMELE"
+            option = 2
+        elif first_name == "":
+            message = "VA ROG COMPLETATI PRENUMELE"
+            option = 3
+        return option, message
+
+    def check_cnp_complete(self, cnp):
+        if cnp == "":
             return True
         return False
