@@ -3,7 +3,7 @@ import constants_pacienti
 import sqlite3
 
 
-class CheckSqlCommands():
+class CheckSqlCommands:
     '''
     Here we check all sql things in order for the app to not throw errors
     '''
@@ -33,7 +33,7 @@ class CheckSqlCommands():
         my_cursor = connection.cursor()
         my_cursor.execute(
             """SELECT * from """ + table_name + """ WHERE CNP = """ + "'" + cnp + "'" + """ AND DATA= """ + "'" + selection_date + "'")
-        #print(my_cursor.fetchall())
+        # print(my_cursor.fetchall())
         list_records = my_cursor.fetchall()
         if len(list_records) > 0:
             result = True
@@ -43,11 +43,11 @@ class CheckSqlCommands():
         connection.close()
         return result
 
-    def get_original_list(self, table_name, cnp, last_name):
+    def get_original_list(self, table_name, id_table):
         database = os.path.join(os.getcwd(), constants_pacienti.DATABASE_FOLDER, constants_pacienti.NAME_DATABASE)
         connection = sqlite3.connect(database)
         my_cursor = connection.cursor()
-        my_cursor.execute("SELECT * from " + table_name + " WHERE cnp = " + cnp + "AND last_name= " + last_name)
+        my_cursor.execute("SELECT * from " + table_name + " WHERE oid = " + id_table)
         result = my_cursor.fetchall()
         my_cursor.close()
         connection.close()
@@ -80,3 +80,9 @@ class CheckSqlCommands():
 
     def compute_address_excel(self, street_name, locality_name, region_name):
         return street_name + "," + locality_name + "," + region_name
+
+    def compare_list(self, original_list, updated_list):
+        for i in range(0, len(original_list)):
+            if original_list[i] != updated_list[i]:
+                return False
+        return True

@@ -78,3 +78,8 @@ class CheckFields:
         if cnp == "":
             return True
         return False
+
+    def split_date(self,date_string):
+        list_dates = date_string.split("-")
+        return list_dates
+
