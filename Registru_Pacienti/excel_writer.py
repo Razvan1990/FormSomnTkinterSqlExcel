@@ -77,7 +77,9 @@ class ExcelWriter:
             work_sheet.auto_filter.ref = full_range
             wb.save(excel_location)
             message_excel = "Baza de date cu pacienti este transferata si disponibila pe {}".format(excel_location)
+            message_warning ="VA ROG NU EFECTUATI NICI O OPERATIE CAT TIMP VIZUALIZATI FISIERUL EXCEL.\n APLICATIA VA RULA NORMAL DUPA INCHIDEREA EXCELULUI"
             messagebox.showinfo("EXCEL CREATED", message=message_excel)
+            messagebox.showinfo("FARA OPERATII", message=message_warning)
             os.system(excel_location)
         except:
             messagebox.showerror("INCHIDETI FISIER EXCEL",

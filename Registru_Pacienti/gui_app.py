@@ -17,7 +17,7 @@ class GuiApp:
 
     def __init__(self):
         self.table_name = "Patient_registry"
-        self.pictures_folder = os.path.dirname(os.getcwd())
+        self.pictures_folder = os.getcwd()
         self.checker_sql = CheckSqlCommands()
         self.checker_field = CheckFields()
         self.writer = ExcelWriter()
@@ -845,6 +845,7 @@ class GuiApp:
                                font=("Helvetica", 9, "bold"), command=self.cancel_treeview_delete)
         ok_button.place(x=150, y=343)
         cancel_button.place(x=480, y=343)
+        root_delete_treeview.mainloop()
 
     def handle_radio_button_date(self, value_date, *args):
         # value_date = selection_option1
@@ -1045,6 +1046,7 @@ class GuiApp:
                                font=("Helvetica", 9, "bold"), command=self.cancel_form_delete)
         ok_button.place(x=150, y=215)
         cancel_button.place(x=500, y=215)
+        root_delete.mainloop()
 
     '''
     EDIT PART
@@ -1165,7 +1167,7 @@ class GuiApp:
                               "cnp_upd": str(cnp_entry_update.get()),
                               "telephone_upd": str(telephone_number_entry_update.get()),
                               "address_street_upd": address_entry_street_update.get().upper(),
-                              "address_locality_upd":address_entry_locality_update.get().upper(),
+                              "address_locality_upd": address_entry_locality_update.get().upper(),
                               "address_region_upd": judet_value_update.get().upper(),
                               "insurance_val_upd": has_insurance_value_general_update.get(),
                               "insurance_type_upd": asigurare_value_update.get(),
@@ -1704,6 +1706,7 @@ class GuiApp:
         name_label_custom.place(x=70, y=40)
         cnp_label_custom.place(x=70, y=80)
         date_label_custom.place(x=70, y=120)
+        root_update.mainloop()
 
     def view_edit_records(self, table_name, option, select_date, first_name, last_name, cnp):
         '''MAKE CHECKS'''
@@ -1850,6 +1853,7 @@ class GuiApp:
         # add bind function to treeview
         # todo open_entry_button
         tree_patients_edit.bind("<Double-Button-1>", lambda event: self.open_entry(self.table_name, event))
+        root_edit_treeview.mainloop()
 
     def cancel_form_edit(self):
         root_edit.destroy()
@@ -2002,6 +2006,7 @@ class GuiApp:
                                font=("Helvetica", 9, "bold"), command=self.cancel_form_edit)
         ok_button.place(x=150, y=215)
         cancel_button.place(x=500, y=215)
+        root_edit.mainloop()
 
     '''
     Main gui creation
