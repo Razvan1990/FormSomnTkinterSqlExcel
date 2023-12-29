@@ -18,10 +18,7 @@ REGION_LIST = [
 INSURANCE_LIST = ["Salariat", "Pensionar", "Elev/Student", "PNS", "Ajutor Social", "Lege Speciala", "Handicap", "MAI", "Co-Asigurat", "NON-APLICABIL"]
 MASK_TYPE = ["NAZALA", "ORONAZALA", "PILLOWS", "NON-APLICABIL"]
 APNEA_TYPE = ["CENTRAL", "OBSTRUCTIV", "MIXT", "NON-APLICABIL"]
-#SQL COLUMNS -needed for excel parts
-SQL_HEADERS = ["DATA", "PRENUME", "NUME", "CNP", "ADRESA", "ASIGURARE", "TIP_ASIGURARE", "BILET_TRIMITERE,"
-                            "NUMAR_BILET", "ANAMNEZA", "APNEE", "TIP_APNEE", "TIP_MASCA", "COMPLIANTA", "PRESIUNE",
-                            "BOLI_CUNOSCUTE", "BOLI", "RECOMANDARE"]
+
 
 
 

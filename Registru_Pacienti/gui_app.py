@@ -1127,8 +1127,6 @@ class GuiApp:
         list_modifications.append(disease_section_update.get("1.0", "end-1c").upper())
         list_modifications.append(recommendation_section_update.get("1.0", "end-1c").upper())
 
-        print(list_record_entries)
-        print(list_modifications)
         # make the comparison
         if self.checker_sql.compare_list(list_record_entries[0], list_modifications):
             messagebox.showerror("FARA MODIFICARI", "NU EXISTA MODIFICARI LA DATE")
@@ -1851,7 +1849,6 @@ class GuiApp:
                                font=("Helvetica", 9, "bold"), command=self.cancel_treeview_edit)
         cancel_button.place(x=250, y=343)
         # add bind function to treeview
-        # todo open_entry_button
         tree_patients_edit.bind("<Double-Button-1>", lambda event: self.open_entry(self.table_name, event))
         root_edit_treeview.mainloop()
 
