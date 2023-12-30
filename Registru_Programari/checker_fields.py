@@ -52,3 +52,9 @@ class CheckFields:
     def convert_date(self, date_string):
         new_date = "D" + "_" + date_string.replace("-", "_")
         return new_date
+
+    def reconvert_date(self, date_table_name):
+        #this function is used to create the excel sheets with date and to sort list by dates
+        original_date = date_table_name[2:].replace("_", "-")
+        return original_date
+

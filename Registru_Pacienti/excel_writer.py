@@ -49,7 +49,7 @@ class ExcelWriter:
             work_sheet["A1"].alignment = Alignment(horizontal="center")
             work_sheet["A1"].font = Font(bold=True)
             for column in list_index_columns:
-                # make a custome style
+                # make a custom style
                 work_sheet["{}1".format(column)].fill = custom_fill
             '''wrap text'''
             # first let's see what is the max value of each row
@@ -58,7 +58,7 @@ class ExcelWriter:
                 list_length_column = list()
                 for i in range(1, work_sheet.max_row + 1):
                     # in case it is not completed the cell
-                    if work_sheet["{}{}".format(list_index_columns[index_column], i)].value == None:
+                    if work_sheet["{}{}".format(list_index_columns[index_column], i)].value is None:
                         continue
                     else:
                         column_row_length = len(work_sheet["{}{}".format(list_index_columns[index_column], i)].value)

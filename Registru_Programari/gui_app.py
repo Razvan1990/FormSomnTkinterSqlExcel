@@ -8,6 +8,7 @@ from tkcalendar import Calendar
 from checker_fields import CheckFields
 from checkers_sql import CheckSqlCommands
 from sms_sender import SendSmsAppointment
+from excel_writer import ExcelWriter
 import constants_programari
 
 
@@ -19,6 +20,7 @@ class GuiApp:
         self.checkers_fields = CheckFields()
         self.checkers_sql = CheckSqlCommands()
         self.sms_sender = SendSmsAppointment()
+        self.excel_writer = ExcelWriter()
 
     '''
     ADD PART
@@ -35,7 +37,7 @@ class GuiApp:
             messagebox.showerror(parent=root_appointments_addition, title="DATE NECOMPLETATE",
                                  message="COMPLETATI DATELE OBLIGATORII!")
             return
-            # 2. check to see if necessary fields are completed
+            # 2. check cnp
         message_error_cnp, option_error_cnp = self.checkers_fields.get_cnp_errors(cnp)
         if option_error_cnp == 1:
             messagebox.showerror(parent=root_appointments_addition, title="CNP INVALID", message=message_error_cnp)
@@ -235,7 +237,6 @@ class GuiApp:
         my_cursor = connection.cursor()
         my_cursor.execute("""SELECT oid, *FROM """ + date_selected_new)
         list_appointments = my_cursor.fetchall()
-        print(list_appointments)
         '''
         CREATE GUI FOR TREEVIEW
         '''
@@ -347,7 +348,7 @@ class GuiApp:
         # CREATE BUTTONS
         ok_button = Button(frame_title, text="DISPONIBILITATE", width=20, height=2, fg="#1E2729", bg="#248B48",
                            font=("Helvetica", 9, "bold"),
-                           command=lambda: self.check_available_hours())  # command to put
+                           command=lambda: self.check_available_hours())
         cancel_button = Button(frame_title, text="CANCEL", width=20, height=2, fg="#1E2729", bg="#E8E7D8",
                                font=("Helvetica", 9, "bold"), command=self.cancel_form_add)
         ok_button.place(x=40, y=250)
@@ -401,7 +402,7 @@ class GuiApp:
         convert_excel_all = Button(app_menu, fg="#EEEBF3", bg="#F36D1C", font=("Helvetica", 9, "bold"), bd=4,
                                    cursor="target", width=20, height=2, justify="center",
                                    text="TRANSFER EXCEL DATE ",
-                                   relief=tkinter.GROOVE, )  # command=lambda: self.writer.write_to98_excel(self.table_name))
+                                   relief=tkinter.GROOVE,   command=lambda: self.excel_writer.write_to_excel())
 
         cancel_button = Button(app_menu, fg="#EEEBF3", bg="#E10E3A", font=("Helvetica", 9, "bold"), bd=4,
                                cursor="target", width=66, height=2, justify="center", text="INCHIDERE",
