@@ -427,7 +427,6 @@ class GuiApp:
         for table in list_tables_final_dates:
             sorted_table = self.checkers_fields.convert_date(table)
             list_tables_sql_sorted.append(sorted_table)
-        print(list_tables_sql_sorted)
         # now we need to iterate on every table and fetch the results from there
         for table_name in list_tables_sql_sorted:
             if option == "Nume":
