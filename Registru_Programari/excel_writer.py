@@ -50,7 +50,7 @@ class ExcelWriter:
                 list_tables_final_dates.append(date)
             # sort the list in cronological order
             list_tables_final_dates.sort(key=lambda data: datetime.strptime(data, "%d-%m-%Y"), reverse=True)
-            # recreate tables in sorted order now br reverse engineering the reconvert(convert)
+            # recreate tables in sorted order now by reverse engineering the reconvert(convert)
             list_tables_sql_sorted = list()
             for table in list_tables_final_dates:
                 sorted_table = self.checker.convert_date(table)
@@ -61,7 +61,6 @@ class ExcelWriter:
                 sql = "SELECT * FROM " + table_name
                 df = pd.read_sql(sql, connection)
                 df.to_excel(writer, sheet_name=list_tables_final_dates[i], index=False)
-
                 i += 1
             '''CUSTOMIZE SHEETS'''
             writer.close()

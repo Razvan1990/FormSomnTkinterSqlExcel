@@ -5,12 +5,12 @@ from tkinter import *
 from tkinter import messagebox
 from tkinter import ttk
 from tkcalendar import Calendar
+from datetime import datetime
 from checker_fields import CheckFields
 from checkers_sql import CheckSqlCommands
 from sms_sender import SendSmsAppointment
 from excel_writer import ExcelWriter
 import constants_programari
-
 
 
 class GuiApp:
@@ -79,21 +79,21 @@ class GuiApp:
                           )
         connection.commit()
         connection.close()
-        message_appointment = "Pacientul {} a fost programat la consult in data de {} in intervalul orar {}".format(name,
-                                                                                                        selection_day,
-                                                                                                        hour_entry.get())
-        messagebox.showinfo(parent=root_appointments_addition, title="PROGRAMARE CU SUCCESS", message=message_appointment)
-        #send sms to recipient
+        message_appointment = "Pacientul {} a fost programat la consult in data de {} in intervalul orar {}".format(
+            name,
+            selection_day,
+            hour_entry.get())
+        messagebox.showinfo(parent=root_appointments_addition, title="PROGRAMARE CU SUCCESS",
+                            message=message_appointment)
+        # send sms to recipient
         '''THIS PART IS WORKING BUT SMS CAN BE SENT JUST TO VERIFIED NUMBER(ME)'''
-        #self.sms_sender.add_phone_to_list(telephone_number,first_name_entry_add.get(), name)
-        #self.sms_sender.send_sms(telephone_number,selection_day,hour_entry.get())
+        # self.sms_sender.add_phone_to_list(telephone_number,first_name_entry_add.get(), name)
+        # self.sms_sender.send_sms(telephone_number,selection_day,hour_entry.get())
         '''SECOND METHOD WORKS BETTER FROM SINCH'''
-        #self.sms_sender.send_sms2(telephone_number,selection_day, hour_entry.get())
+        # self.sms_sender.send_sms2(telephone_number,selection_day, hour_entry.get())
         root_appointments_addition.destroy()
         root_add_treeview.destroy()
         self.create_main_gui()
-
-
 
     def make_appointment_gui(self):
 
@@ -355,6 +355,310 @@ class GuiApp:
         cancel_button.place(x=300, y=250)
 
     '''
+    SEARCH PART
+    '''
+
+    def cancel_search_treeview(self):
+        root_search_treeview.destroy()
+
+    def get_appointments_dates_hours(self, option, first_name, last_name, cnp):
+        '''
+        Here we will get all the tables and traverse all the tables to get the records
+        based on the search pattern
+        :return: A listbox with all dates and respective hour when a patient  is programmed
+        '''
+        '''MAKE CHECKS'''
+        # 1.check button is pressed
+        if self.checkers_fields.check_radiobutton_pressed(option):
+            messagebox.showerror("NICI O SELECTIE", "VA ROG SELECTATI O OPTIUNE DE CAUTARE")
+            return
+        # 2. check last and first name
+        if option == "Nume":
+            option_error, message_error = self.checkers_fields.check_if_first_last_name_entered(first_name, last_name)
+            if option_error == 1:
+                messagebox.showerror("CAMPURI NECOMPLETATE", message=message_error)
+                return
+            elif option_error == 2:
+                messagebox.showerror("NUME NECOMPLETAT", message=message_error)
+                return
+            elif option_error == 3:
+                messagebox.showerror("PRENUME NECOMPLETAT", message=message_error)
+                return
+        # 3. check cnp
+        if option == "Cnp":
+            if self.checkers_fields.check_cnp_complete(cnp):
+                messagebox.showerror("CNP NECOMPLETAT", "VA ROG COMPLETATI CNP-UL")
+                return
+            cnp_message_error, cnp_option_error = self.checkers_fields.get_cnp_errors(cnp)
+            if cnp_option_error == 1:
+                messagebox.showerror("CNP INVALID", message=cnp_message_error)
+                return
+            elif cnp_option_error == 2:
+                messagebox.showerror("CNP INVALID", message=cnp_message_error)
+                return
+            elif cnp_option_error == 3:
+                messagebox.showerror("CNP INVALID", message=cnp_message_error)
+                return
+        '''SQL COMMAND'''
+        # 1. FIRST WE NEED TO ITERATE AND TAKE ALL THE TABLES
+        # a dictionary to have the results table hour pairs
+        dict_results = {}
+        database = os.path.join(os.getcwd(), constants_programari.DATABASE_FOLDER,
+                                constants_programari.NAME_DATABASE)
+        connection = sqlite3.connect(database)
+        my_cursor = connection.cursor()
+        sql_retrieve_table_command = """SELECT name FROM sqlite_schema WHERE type ='table' """
+        my_cursor.execute(sql_retrieve_table_command)
+        list_tables_sql = my_cursor.fetchall()
+        # get list of tables from returned list of tuples
+        list_tables_final = list()  # this list is needed to retrieve from sql
+        for tuple_name in list_tables_sql:
+            list_tables_final.append(tuple_name[0])
+        # sort the list in order
+        # transform list with date format
+        list_tables_final_dates = list()
+        for name_date in list_tables_final:
+            date = self.checkers_fields.reconvert_date(name_date)
+            list_tables_final_dates.append(date)
+        # sort the list in chronological order
+        list_tables_final_dates.sort(key=lambda data: datetime.strptime(data, "%d-%m-%Y"), reverse=True)
+        # recreate tables in sorted order now by reverse engineering the reconvert(convert)
+        list_tables_sql_sorted = list()
+        for table in list_tables_final_dates:
+            sorted_table = self.checkers_fields.convert_date(table)
+            list_tables_sql_sorted.append(sorted_table)
+        print(list_tables_sql_sorted)
+        # now we need to iterate on every table and fetch the results from there
+        for table_name in list_tables_sql_sorted:
+            if option == "Nume":
+                my_cursor.execute(
+                    """SELECT ORA, NUME, CNP FROM """ + table_name + """ WHERE PRENUME=:first_name AND NUME=:last_name""",
+                    # dummy dictionary
+                    {
+                        "first_name": first_name.upper(),
+                        "last_name": last_name.upper()
+                    }
+                )
+                list_results = my_cursor.fetchall()
+                # put just lists with data available
+                if len(list_results) != 0:
+                    dict_results.update({table_name[2:]: list_results[0]})
+            elif option == "Cnp":
+                my_cursor.execute(
+                    """SELECT ORA, NUME, CNP FROM """ + table_name + """ WHERE CNP=:cnp""",
+                    # dummy dictionary
+                    {
+                        "cnp": cnp
+                    }
+                )
+                list_results = my_cursor.fetchall()
+                # put just lists with data available
+                if len(list_results) != 0:
+                    dict_results.update({table_name[2:]: list_results[0]})
+        # check dictionary is not empty -> no valid appointment
+        if len(dict_results) == 0:
+            messagebox.showerror("PROGRAMARE INEXISTENTA", "NU EXISTA O PROGRAMARE CU ACESTE DATE")
+            return
+        '''CREATE GUI TO SHOW DATA'''
+        global root_search_treeview
+        root_search_treeview = Tk()
+        root_search_treeview.title("SEARCH")
+        image_ico = os.path.join(self.pictures_folder, constants_programari.PICTURE_FOLDER,
+                                 constants_programari.SOMN_ICO_IMAGE)
+        root_search_treeview.iconbitmap(image_ico)
+        root_search_treeview.geometry("650x400")
+        root_search_treeview["bg"] = "#32BBAD"
+        root_search_treeview.resizable(NO, NO)
+        root_search_treeview.protocol("WM_DELETE_WINDOW", self.cancel_x_button)
+        # treeview creation
+        frame_treeview = LabelFrame(root_search_treeview, fg="#EEEBF3", bg="#32BBAD", font=("Helvetica", 15, "bold"),
+                                    bd=5,
+                                    cursor="target", width=575, height=375, labelanchor="n", text=last_name.upper() + " " + cnp,
+                                    relief=tkinter.GROOVE)#it shows eithher the name or the cnp depending on what is selecting
+        frame_treeview.grid(padx=40, pady=10, row=0, column=0, )  # put it in the middle
+        frame_treeview.grid_rowconfigure(0, weight=1)
+        frame_treeview.grid_columnconfigure(0, weight=1)
+        # create tree to show appointments
+        columns = ("DATA", "ORA", "NUME", "CNP")
+        tree_searches = ttk.Treeview(frame_treeview, show='headings', columns=columns, height=13)
+        # ADD THE COLUMNS
+        # define the headings
+        tree_searches.heading(0, text="DATA", anchor=tkinter.CENTER)
+        tree_searches.heading(1, text="ORA", anchor=tkinter.CENTER)
+        tree_searches.heading(2, text="NUME", anchor=tkinter.CENTER)
+        tree_searches.heading(3, text="CNP", anchor=tkinter.CENTER)
+        # redefine column dimensions
+        tree_searches.column("DATA", width=100, stretch=NO)
+        tree_searches.column("ORA", width=125, stretch=NO)
+        tree_searches.column("NUME", width=125, stretch=NO)
+        tree_searches.column("CNP", width=125, stretch=NO)
+        tree_searches.tag_configure("orow")
+        # create a custom style
+        style = ttk.Style(root_search_treeview)
+        style.theme_use("clam")
+        style.configure("Treeview.Heading", background="#D4EE77", foreground="#C7651D")
+        # populate the list
+        for key in dict_results:
+            record_update = list()
+            record_update.append(key)
+            record_update.append(dict_results[key][0])
+            record_update.append(dict_results[key][1])
+            record_update.append(dict_results[key][2])
+            record_update_tuple_searches = tuple(record_update)
+            tree_searches.insert('', tkinter.END, values=record_update_tuple_searches)
+        tree_searches.place(x=35, y=10)
+        # create a scrollbar
+        my_scrollbar = Scrollbar(frame_treeview, orient=tkinter.VERTICAL, command=tree_searches.yview)
+        tree_searches.configure(yscrollcommand=my_scrollbar.set)
+        my_scrollbar.place(x=513, y=11, height=288)
+        #add ok button to quit treeview
+        ok_button = Button(frame_treeview, text="INCHIDERE REZULTATE", width=30, height=2, fg="#1E2729", bg="#E8E7D8",
+                               font=("Helvetica", 9, "bold"), command=self.cancel_search_treeview)
+        ok_button.place(x=170, y=302)
+
+
+    def handle_radio_button_name(self, value_name, *args):
+        # value_name = selection_option1
+        if args[0] == value_name:
+            # first we make the first and last name states enabled
+            args[1]["state"] = tkinter.NORMAL
+            args[2]["state"] = tkinter.NORMAL
+            # delete cnp and make it disabled
+            args[3]["state"] = tkinter.NORMAL
+            args[3].delete(0, END)
+            args[3]["state"] = tkinter.DISABLED
+
+    def handle_radio_button_cnp(self, value_cnp, *args):
+        # value_cnp = selection_option2
+        if args[0] == value_cnp:
+            # first we make the cnp enabled
+            args[1]["state"] = tkinter.NORMAL
+            # delete the first and last name and make them disabled
+            args[2]["state"] = tkinter.NORMAL
+            args[3]["state"] = tkinter.NORMAL
+            args[2].delete(0, END)
+            args[3].delete(0, END)
+            # make them  disabled again
+            args[2]["state"] = tkinter.DISABLED
+            args[3]["state"] = tkinter.DISABLED
+
+    def cancel_form_search(self):
+        root_search.destroy()
+        self.create_main_gui()
+
+    def create_search_gui(self):
+        app_menu.destroy()
+        global root_search
+        global radio_button_name
+        global radio_button_cnp
+        global first_name_entry_search
+        global last_name_entry_search
+        global cnp_entry_search
+        global selection_search_option
+
+        root_search = Tk()
+        root_search.title("CAUTARE")
+        image_ico = os.path.join(self.pictures_folder, constants_programari.PICTURE_FOLDER,
+                                 constants_programari.SOMN_ICO_IMAGE)
+        root_search.iconbitmap(image_ico)
+        root_search.geometry("720x330")
+        root_search["bg"] = "#32BBAD"
+        root_search.resizable(NO, NO)
+        root_search.protocol("WM_DELETE_WINDOW", self.cancel_x_button)
+        # stringvars
+        selection_search_option = StringVar()
+        selection_option1 = "Nume"
+        selection_option2 = "Cnp"
+        frame_title = LabelFrame(root_search, fg="#EEEBF3", bg="#32BBAD", font=("Helvetica", 20, "bold"), bd=5,
+                                 cursor="target", width=650, height=300, labelanchor="n", text="CAUTARE PACIENT",
+                                 relief=tkinter.GROOVE)
+        frame_title.grid(padx=30, pady=10, row=0, column=0, )  # put it in the middle
+        frame_title.grid_rowconfigure(0, weight=1)
+        frame_title.grid_columnconfigure(0, weight=1)
+        # add frame for first and last name
+        frame_first_last_name = LabelFrame(frame_title, fg="#EEEBF3", bg="#32BBAD", font=("Helvetica", 15, "bold"),
+                                           bd=5,
+                                           cursor="target", width=230, height=190, labelanchor="n",
+                                           text="SELECTIE NUME",
+                                           relief=tkinter.GROOVE)
+        frame_first_last_name.place(x=20, y=10)
+        first_name_entry_search = Entry(frame_first_last_name, width=18, justify="center",
+                                        font=("Helvetica", 8, "bold"),
+                                        cursor="target",
+                                        bg="#9EEB8D", state=tkinter.DISABLED)
+        first_name_entry_search.place(x=100, y=40)
+        first_name_entry_label = Label(frame_first_last_name, text="PRENUME", justify="center",
+                                       font=("Helvetica", 11, "bold"),
+                                       cursor="star", fg="#5F6B78", bg="#32BBAD")
+        first_name_entry_label.place(x=5, y=40)
+        last_name_entry_search = Entry(frame_first_last_name, width=18, justify="center",
+                                       font=("Helvetica", 8, "bold"),
+                                       cursor="target",
+                                       bg="#9EEB8D", state=tkinter.DISABLED)
+        last_name_entry_search.place(x=100, y=100)
+        last_name_entry_label = Label(frame_first_last_name, text="NUME", justify="center",
+                                      font=("Helvetica", 11, "bold"),
+                                      cursor="star", fg="#5F6B78", bg="#32BBAD")
+        last_name_entry_label.place(x=5, y=100)
+        # add cnp frame
+        frame_cnp = LabelFrame(frame_title, fg="#EEEBF3", bg="#32BBAD", font=("Helvetica", 15, "bold"),
+                               bd=5,
+                               cursor="target", width=230, height=190, labelanchor="n",
+                               text="SELECTIE CNP",
+                               relief=tkinter.GROOVE)
+        frame_cnp.place(x=270, y=10)
+        cnp_entry_search = Entry(frame_cnp, width=20, justify="center",
+                                 font=("Helvetica", 8, "bold"),
+                                 cursor="target",
+                                 bg="#9EEB8D", state=tkinter.DISABLED)
+        cnp_entry_search.place(x=80, y=70)
+        cnp_search_label = Label(frame_cnp, text="CNP", justify="center",
+                                 font=("Helvetica", 11, "bold"),
+                                 cursor="star", fg="#5F6B78", bg="#32BBAD")
+        cnp_search_label.place(x=5, y=70)
+        # create frame for checkbuttons
+        check_frame = LabelFrame(frame_title, fg="#EEEBF3", bg="#32BBAD", font=("Helvetica", 15, "bold"),
+                                 bd=5,
+                                 cursor="target", width=100, height=190, labelanchor="n",
+                                 text="CHECK",
+                                 relief=tkinter.GROOVE)
+        check_frame.place(x=520, y=10)
+        # put radiobuttons
+        radio_button_name = Radiobutton(check_frame, text="NAME", variable=selection_search_option,
+                                        value=selection_option1,
+                                        bd=5, font=("Helvetica", 11, "bold"),
+                                        bg="#32BBAD", fg="#EEEBF3", selectcolor="black",
+                                        command=lambda: self.handle_radio_button_name(selection_option1,
+                                                                                      selection_search_option.get(),
+                                                                                      first_name_entry_search,
+                                                                                      last_name_entry_search,
+                                                                                      cnp_entry_search))
+        radio_button_name.place(x=5, y=30)
+        radio_button_cnp = Radiobutton(check_frame, text="CNP", variable=selection_search_option,
+                                       value=selection_option2,
+                                       bd=5, font=("Helvetica", 11, "bold"),
+                                       bg="#32BBAD", fg="#EEEBF3", selectcolor='black',
+                                       command=lambda: self.handle_radio_button_cnp(selection_option2,
+                                                                                    selection_search_option.get(),
+                                                                                    cnp_entry_search,
+                                                                                    first_name_entry_search,
+                                                                                    last_name_entry_search))
+
+        radio_button_cnp.place(x=5, y=100)
+        # put ok and cancel buttons
+        ok_button = Button(frame_title, text="VIZUALIZARE", width=30, height=2, fg="#1E2729", bg="#248B48",
+                           font=("Helvetica", 9, "bold"),
+                           command=lambda: self.get_appointments_dates_hours(selection_search_option.get(),
+                                                                             first_name_entry_search.get(),
+                                                                             last_name_entry_search.get(),
+                                                                             cnp_entry_search.get()))
+        cancel_button = Button(frame_title, text="CANCEL", width=30, height=2, fg="#1E2729", bg="#E8E7D8",
+                               font=("Helvetica", 9, "bold"), command=self.cancel_form_search)
+        ok_button.place(x=70, y=210)
+        cancel_button.place(x=350, y=210)
+        root_search.mainloop()
+
+    '''
     MENU PART
     '''
 
@@ -393,27 +697,31 @@ class GuiApp:
         add_button = Button(app_menu, fg="#EEEBF3", bg="#5BBD2A", font=("Helvetica", 9, "bold"), bd=4,
                             cursor="target", width=20, height=2, justify="center", text="ADAUGARE",
                             relief=tkinter.GROOVE, command=self.create_add_gui)
-        select_button = Button(app_menu, fg="#EEEBF3", bg="#2092B0", font=("Helvetica", 9, "bold"), bd=4,
+        select_button = Button(app_menu, fg="#EEEBF3", bg="#0C79E7", font=("Helvetica", 9, "bold"), bd=4,
                                cursor="target", width=20, height=2, justify="center", text="EDITARE",
                                relief=tkinter.GROOVE, )  # command=self.create_edit_gui)
         delete_button = Button(app_menu, fg="#EEEBF3", bg="#BC6678", font=("Helvetica", 9, "bold"), bd=4,
                                cursor="target", width=20, height=2, justify="center", text="STERGERE",
                                relief=tkinter.GROOVE, )  # command=self.create_delete_gui)
+        search_button = Button(app_menu, fg="#EEEBF3", bg="#32BBAD", font=("Helvetica", 9, "bold"), bd=4,
+                               cursor="target", width=20, height=2, justify="center", text="CAUTARE PROGRAMARE",
+                               relief=tkinter.GROOVE, command=self.create_search_gui)
         convert_excel_all = Button(app_menu, fg="#EEEBF3", bg="#F36D1C", font=("Helvetica", 9, "bold"), bd=4,
                                    cursor="target", width=20, height=2, justify="center",
                                    text="TRANSFER EXCEL DATE ",
-                                   relief=tkinter.GROOVE,   command=lambda: self.excel_writer.write_to_excel())
-
+                                   relief=tkinter.GROOVE, command=lambda: self.excel_writer.write_to_excel())
         cancel_button = Button(app_menu, fg="#EEEBF3", bg="#E10E3A", font=("Helvetica", 9, "bold"), bd=4,
                                cursor="target", width=66, height=2, justify="center", text="INCHIDERE",
                                relief=tkinter.GROOVE, command=self.close_main_gui)
         add_button.grid(row=1, column=0, padx=10, pady=5, ipady=15)
-        add_button.place(relx=0.11, rely=0.15)
+        add_button.place(relx=0.11, rely=0.13)
         select_button.grid(row=2, column=0, padx=10, pady=5, ipady=15)
-        select_button.place(relx=0.11, rely=0.36)
+        select_button.place(relx=0.11, rely=0.29)
         delete_button.grid(row=3, column=0, padx=10, pady=5, ipady=15)
-        delete_button.place(relx=0.11, rely=0.57)
-        convert_excel_all.grid(row=4, column=0, padx=10, pady=5, ipady=15)
+        delete_button.place(relx=0.11, rely=0.45)
+        search_button.grid(row=4, column=0, padx=10, pady=5, ipady=15)
+        search_button.place(relx=0.11, rely=0.61)
+        convert_excel_all.grid(row=5, column=0, padx=10, pady=5, ipady=15)
         convert_excel_all.place(relx=0.11, rely=0.78)
         cancel_button.grid(row=5, column=1, padx=(5, 0), pady=2)
         cancel_button.place(relx=0.41, rely=0.89)

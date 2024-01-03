@@ -9,6 +9,11 @@ class CheckFields:
             return True
         return False
 
+    def check_radiobutton_pressed(self, radiobutton_value):
+        if radiobutton_value == "":
+            return True
+        return False
+
     def check_selected_date(self, date_selected):
         # get current date
         current_date = datetime.today()
@@ -39,11 +44,29 @@ class CheckFields:
     def get_telephone_number_errors(self, tel_number):
         message = ""
         option = 0
-        # the only check to do is just to see if there are numbers
         if not tel_number.isdigit():
             option = 1
             message = "NUMARUL DE TELEFON NU TREBUIE SA CONTINA LITERE"
         return message, option
+
+    def check_if_first_last_name_entered(self, first_name, last_name):
+        message = ""
+        option = 0
+        if last_name == "" and first_name == "":
+            message = "VA ROG COMPLETATI CAMPURILE DE PRENUME SI NUME"
+            option = 1
+        elif last_name == "":
+            message = "VA ROG COMPLETATI NUMELE"
+            option = 2
+        elif first_name == "":
+            message = "VA ROG COMPLETATI PRENUMELE"
+            option = 3
+        return option, message
+
+    def check_cnp_complete(self, cnp):
+        if cnp == "":
+            return True
+        return False
 
     def split_date(self, date_string):
         list_dates = date_string.split("-")

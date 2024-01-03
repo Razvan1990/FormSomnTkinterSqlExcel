@@ -793,7 +793,7 @@ class GuiApp:
         frame_treeview.grid(padx=25, pady=10, row=0, column=0, )  # put it in the middle
         frame_treeview.grid_rowconfigure(0, weight=1)
         frame_treeview.grid_columnconfigure(0, weight=1)
-        # create tree to show footballers
+        # create tree to show patients
         columns = ("ID", "PRENUME", "NUME", "CNP", "APNEE", "TIP_APNEE", "PRESIUNE")
         tree_patients = ttk.Treeview(frame_treeview, show='headings', columns=columns, height=15, )
         # ADD THE COLUMNS
