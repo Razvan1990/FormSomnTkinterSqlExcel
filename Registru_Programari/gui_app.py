@@ -253,7 +253,7 @@ class GuiApp:
         root_add_treeview.geometry("900x600")
         root_add_treeview["bg"] = "#5BBD2A"
         root_add_treeview.resizable(NO, NO)
-        # root_edit_treeview.protocol("WM_DELETE_WINDOW", self.cancel_x_button)
+        root_add_treeview.protocol("WM_DELETE_WINDOW", self.cancel_x_button)
         # frame creation
         frame_treeview = LabelFrame(root_add_treeview, fg="#EEEBF3", bg="#5BBD2A", font=("Helvetica", 16, "bold"), bd=5,
                                     cursor="target", width=750, height=475, labelanchor="n",
@@ -472,8 +472,9 @@ class GuiApp:
         # treeview creation
         frame_treeview = LabelFrame(root_search_treeview, fg="#EEEBF3", bg="#32BBAD", font=("Helvetica", 15, "bold"),
                                     bd=5,
-                                    cursor="target", width=575, height=375, labelanchor="n", text=last_name.upper() + " " + cnp,
-                                    relief=tkinter.GROOVE)#it shows eithher the name or the cnp depending on what is selecting
+                                    cursor="target", width=575, height=375, labelanchor="n",
+                                    text=last_name.upper() + " " + cnp,
+                                    relief=tkinter.GROOVE)  # it shows eithher the name or the cnp depending on what is selecting
         frame_treeview.grid(padx=40, pady=10, row=0, column=0, )  # put it in the middle
         frame_treeview.grid_rowconfigure(0, weight=1)
         frame_treeview.grid_columnconfigure(0, weight=1)
@@ -499,7 +500,7 @@ class GuiApp:
         # populate the list
         for key in dict_results:
             record_update = list()
-            record_update.append(key)
+            record_update.append(key.replace("_", "-"))
             record_update.append(dict_results[key][0])
             record_update.append(dict_results[key][1])
             record_update.append(dict_results[key][2])
@@ -510,11 +511,10 @@ class GuiApp:
         my_scrollbar = Scrollbar(frame_treeview, orient=tkinter.VERTICAL, command=tree_searches.yview)
         tree_searches.configure(yscrollcommand=my_scrollbar.set)
         my_scrollbar.place(x=513, y=11, height=288)
-        #add ok button to quit treeview
+        # add ok button to quit treeview
         ok_button = Button(frame_treeview, text="INCHIDERE REZULTATE", width=30, height=2, fg="#1E2729", bg="#E8E7D8",
-                               font=("Helvetica", 9, "bold"), command=self.cancel_search_treeview)
+                           font=("Helvetica", 9, "bold"), command=self.cancel_search_treeview)
         ok_button.place(x=170, y=302)
-
 
     def handle_radio_button_name(self, value_name, *args):
         # value_name = selection_option1
@@ -658,6 +658,293 @@ class GuiApp:
         root_search.mainloop()
 
     '''
+    DELETE PART
+    '''
+
+    def delete_appointment_sql(self, table_name):
+        database = os.path.join(constants_programari.DATABASE_FOLDER, constants_programari.NAME_DATABASE)
+        connection = sqlite3.connect(database)
+        my_cursor = connection.cursor()
+        # our delete method is in fact an update method because we want to maintain the ID and HOUR
+        my_cursor.execute("""UPDATE """ + table_name + """ SET
+        PRENUME=:first_name_delete,
+        NUME=:last_name_delete,
+        CNP=:cnp_delete,
+        TELEFON=:telephone_delete WHERE oid=:id""",
+                          # dummy dictionary
+                          {
+                              "first_name_delete": "",
+                              "last_name_delete": "",
+                              "cnp_delete": "",
+                              "telephone_delete": "",
+                              "id": list_appointment_delete[0]
+                          }
+                          )
+        connection.commit()
+        connection.close()
+        message_delete = "Programarea pacientului {} de pe data de {} si ora {} a fost stearsa".format(
+            list_appointment_delete[3], table_name[2:].replace("_", "-"), list_appointment_delete[1])
+        messagebox.showinfo(parent=root_delete_appointment_gui, title="PROGRAMARE STEARSA", message=message_delete)
+        root_delete_appointment_gui.destroy()
+        root_delete_appointments.destroy()
+        self.create_main_gui()
+
+    def cancel_delete_record(self):
+        root_delete_appointment_gui.destroy()
+
+    def delete_appointment_gui(self, date_selected):
+        global root_delete_appointment_gui
+        global hour_entry_delete
+        global first_name_entry_delete
+        global last_name_entry_delete
+        global cnp_entry_delete
+        global telephone_entry_delete
+        global list_appointment_delete
+        '''CHECK FIRST IF AN EMPTY RECORD IS PRESSED'''
+        list_appointment_delete = []
+        for appointment in delete_appointments_treeview.selection():
+            appointment_data = delete_appointments_treeview.item(appointment)
+            appointment_list_values = appointment_data["values"]
+            list_appointment_delete = appointment_list_values
+        if list_appointment_delete[3] == "" or list_appointment_delete[4] == "":
+            messagebox.showerror("SLOT GOL", "NU EXISTA O PROGRAMARE LA ACEST SLOT")
+            return
+        root_delete_appointment_gui = Tk()
+        root_delete_appointment_gui.title("STERGERE")
+        image_ico = os.path.join(self.pictures_folder, constants_programari.PICTURE_FOLDER,
+                                 constants_programari.SOMN_ICO_IMAGE)
+        root_delete_appointment_gui.iconbitmap(image_ico)
+        root_delete_appointment_gui.geometry("600x500")
+        root_delete_appointment_gui["bg"] = "#BC6678"
+        root_delete_appointment_gui.resizable(NO, NO)
+        frame_title = LabelFrame(root_delete_appointment_gui, fg="#EEEBF3", bg="#BC6678",
+                                 font=("Helvetica", 20, "bold"),
+                                 bd=5,
+                                 cursor="target", width=500, height=425, labelanchor="n", text="STERGERE PROGRAMARE",
+                                 relief=tkinter.GROOVE)
+        frame_title.grid(padx=42, pady=10, row=0, column=0, )  # put it in the middle
+        frame_title.grid_rowconfigure(0, weight=1)
+        frame_title.grid_columnconfigure(0, weight=1)
+        '''CREATE ENTRIES AND LABELS'''
+        # date
+        date_entry_delete_label = Label(frame_title, width=25, justify="center", font=("Comic Sans", 11, "bold italic"),
+                                        cursor="target",
+                                        bg="#BC6678", fg="#27962D", text=date_selected[2:].replace("_", "-"))
+        date_entry_delete_label.place(x=220, y=30)
+        # hour
+        hour_entry_delete = Entry(frame_title, width=25, justify="center", font=("Helvetica", 9, "bold"),
+                                  cursor="target",
+                                  bg="#D4E2D0")
+        hour_entry_delete.place(x=250, y=80)
+        # first_name
+        first_name_entry_delete = Entry(frame_title, width=25, justify="center", font=("Helvetica", 9, "bold"),
+                                        cursor="target",
+                                        bg="#D4E2D0")
+        first_name_entry_delete.place(x=250, y=130)
+        # last_name
+        last_name_entry_delete = Entry(frame_title, width=25, justify="center", font=("Helvetica", 9, "bold"),
+                                       cursor="target",
+                                       bg="#D4E2D0")
+        last_name_entry_delete.place(x=250, y=180)
+        # cnp
+        cnp_entry_delete = Entry(frame_title, width=25, justify="center", font=("Helvetica", 9, "bold"),
+                                 cursor="target",
+                                 bg="#D4E2D0")
+        cnp_entry_delete.place(x=250, y=230)
+        # telephone
+        telephone_entry_delete = Entry(frame_title, width=25, justify="center",
+                                       font=("Helvetica", 9, "bold"),
+                                       cursor="target",
+                                       bg="#D4E2D0")
+        telephone_entry_delete.place(x=250, y=280)
+        # LABELS
+        date_label_delete = Label(frame_title, text="DATA", justify="center",
+                                  font=("Comic Sans", 11, "bold italic"),
+                                  cursor="star", fg="#27962D", bg="#BC6678", )
+        date_label_delete.place(x=80, y=30)
+
+        hour_label_delete = Label(frame_title, text="ORA*", justify="center",
+                                  font=("Helvetica", 11, "bold"),
+                                  cursor="star", fg="#C6E744", bg="#BC6678", )
+        hour_label_delete.place(x=50, y=80)
+
+        first_name_label_delete = Label(frame_title, text="PRENUME", justify="center",
+                                        font=("Helvetica", 11, "bold"),
+                                        cursor="star", fg="#C6E744", bg="#BC6678", )
+        first_name_label_delete.place(x=50, y=130)
+
+        last_name_label_delete = Label(frame_title, text="NUME*", justify="center",
+                                       font=("Helvetica", 11, "bold"),
+                                       cursor="star", fg="#C6E744", bg="#BC6678", )
+        last_name_label_delete.place(x=50, y=180)
+
+        cnp_label_delete = Label(frame_title, text="CNP*", justify="center",
+                                 font=("Helvetica", 11, "bold"),
+                                 cursor="star", fg="#C6E744", bg="#BC6678", )
+        cnp_label_delete.place(x=50, y=230)
+
+        telephone_label_delete = Label(frame_title, text="TELEFON*", justify="center",
+                                       font=("Helvetica", 11, "bold"),
+                                       cursor="star", fg="#C6E744", bg="#BC6678", )
+        telephone_label_delete.place(x=50, y=280)
+        # add buttons
+        ok_button_update = Button(frame_title, text="STERGERE", width=20, height=2, fg="#1E2729", bg="#248B48",
+                                  font=("Helvetica", 9, "bold"),
+                                  command=lambda: self.delete_appointment_sql(date_selected))
+        cancel_button = Button(frame_title, text="CANCEL", width=20, height=2, fg="#1E2729", bg="#E8E7D8",
+                               font=("Helvetica", 9, "bold"), command=self.cancel_delete_record)
+        ok_button_update.place(x=50, y=320)
+        cancel_button.place(x=280, y=320)
+
+        # MAKE THE ENTRIES ALREADY COMPLETED AND DISABLE THEM
+        hour_entry_delete.insert(0, list_appointment_delete[1])
+        hour_entry_delete["state"] = tkinter.DISABLED
+
+        first_name_entry_delete.insert(0, list_appointment_delete[2])
+        first_name_entry_delete["state"] = tkinter.DISABLED
+
+        last_name_entry_delete.insert(0, list_appointment_delete[3])
+        last_name_entry_delete["state"] = tkinter.DISABLED
+
+        cnp_entry_delete.insert(0, str(list_appointment_delete[4]))
+        cnp_entry_delete["state"] = tkinter.DISABLED
+
+        # check first if telephone number starts with 0 or not -> based on len number
+        if len(str(list_appointment_delete[5])) == 9 or str(list_appointment_delete[5])[0] == "7" or \
+                str(list_appointment_delete[5])[0] == "8":
+            correct_number = "0" + str(list_appointment_delete[5])  # romanian number
+        else:
+            correct_number = str(list_appointment_delete[5])
+
+        telephone_entry_delete.insert(0, correct_number)
+        telephone_entry_delete["state"] = tkinter.DISABLED
+
+    def view_results_day(self, date_selected, root_window):
+        '''SQL SELECTION'''
+        database = os.path.join(constants_programari.DATABASE_FOLDER, constants_programari.NAME_DATABASE)
+        connection = sqlite3.connect(database)
+        my_cursor = connection.cursor()
+        my_cursor.execute("""SELECT oid, * FROM """ + date_selected)
+        list_appointments = my_cursor.fetchall()
+        connection.close()
+        global delete_appointments_treeview
+        # create the columns for the treeview
+        columns = ("ID", "ORA", "PRENUME", "NUME", "CNP", "TELEFON")
+        delete_appointments_treeview = ttk.Treeview(root_window, show='headings', columns=columns,
+                                                    height=16, )
+        # ADD THE COLUMNS
+        # define the headings
+        delete_appointments_treeview.heading(0, text="ID", anchor=tkinter.CENTER)
+        delete_appointments_treeview.heading(1, text="ORA", anchor=tkinter.CENTER)
+        delete_appointments_treeview.heading(2, text="PRENUME", anchor=tkinter.CENTER)
+        delete_appointments_treeview.heading(3, text="NUME", anchor=tkinter.CENTER)
+        delete_appointments_treeview.heading(4, text="CNP", anchor=tkinter.CENTER)
+        delete_appointments_treeview.heading(5, text="TELEFON", anchor=tkinter.CENTER)
+        # redefine column dimensions
+        delete_appointments_treeview.column("ID", width=25, )
+        delete_appointments_treeview.column("ORA", width=125)
+        delete_appointments_treeview.column("PRENUME", width=150, stretch=NO)
+        delete_appointments_treeview.column("NUME", width=150, stretch=NO)
+        delete_appointments_treeview.column("CNP", width=125, stretch=NO)
+        delete_appointments_treeview.column("TELEFON", width=125, stretch=NO)
+        delete_appointments_treeview.tag_configure("orow")
+        # create a custom style
+        style = ttk.Style(root_window)
+        style.theme_use("clam")
+        style.configure("Treeview.Heading", background="#D4EE77", foreground="#C7651D", justify="center")
+        style.configure("Treeview", background="#5B5F51", fieldbackground="#5B5F51", foreground="#F1F7E5",
+                        font=("Helvetica", 10, "bold"))
+        # change selection color
+        style.map("Treeview", background=[("selected", "#A3D623")])
+        # populate the list
+        for appointment in list_appointments:
+            record_update = list()
+            record_update.append(str(appointment[0]))
+            record_update.append(appointment[1])
+            record_update.append(appointment[2])
+            record_update.append(appointment[3])
+            record_update.append(str(appointment[4]))
+            record_update.append(str(appointment[5]))
+            record_update_tuple_delete = tuple(record_update)
+            delete_appointments_treeview.insert('', tkinter.END, values=record_update_tuple_delete)
+            # put treeview on frame
+        delete_appointments_treeview.place(x=15, y=10)
+        root_window["text"] = "PROGRAMARI: " + date_selected[2:].replace("_", "-")
+        delete_appointments_treeview.bind("<Double-Button-1>", lambda event: self.delete_appointment_gui(date_selected))
+
+    def cancel_form_delete(self):
+        root_delete_appointments.destroy()
+        self.create_main_gui()
+
+    def create_delete_gui(self):
+        global root_delete_appointments
+        global date_delete
+        app_menu.destroy()
+        '''RETRIEVE ALL TABLES'''
+        list_tables = self.checkers_sql.get_list_with_tables()
+        # stringvar for date delete
+        global date_delete_value
+        root_delete_appointments = Tk()
+        root_delete_appointments.title("DELETE")
+        image_ico = os.path.join(self.pictures_folder, constants_programari.PICTURE_FOLDER,
+                                 constants_programari.SOMN_ICO_IMAGE)
+        root_delete_appointments.iconbitmap(image_ico)
+        root_delete_appointments.geometry("1200x500")
+        root_delete_appointments["bg"] = "#BC6678"
+        root_delete_appointments.resizable(NO, NO)
+        # stringvar to be defined after root creation
+        date_delete_value = StringVar()
+        # set the value of the option menu to the first chronological day of the list
+        date_delete_value.set(list_tables[0])
+        # root_add.protocol("WM_DELETE_WINDOW", self.cancel_x_button)
+        # create frame for delete
+        frame_title = LabelFrame(root_delete_appointments, fg="#EEEBF3", bg="#BC6678", font=("Helvetica", 25, "bold"),
+                                 bd=5,
+                                 cursor="target", width=1100, height=450, labelanchor="n", text="STERGERE PROGRAMARE",
+                                 relief=tkinter.GROOVE)
+        frame_title.grid(padx=32, pady=10, row=0, column=0, )  # put it in the middle
+        frame_title.grid_rowconfigure(0, weight=1)
+        frame_title.grid_columnconfigure(0, weight=1)
+        # create a frame for datetime
+        frame_date_delete = LabelFrame(frame_title, fg="#EEEBF3", bg="#BC6678", font=("Helvetica", 15, "bold"),
+                                       bd=5,
+                                       cursor="target", width=275, height=250, labelanchor=tkinter.N,
+                                       text="SELECTIE ZI",
+                                       relief=tkinter.GROOVE)
+        frame_date_delete.grid(row=0, column=0, padx=10, pady=10, sticky=tkinter.EW)
+        frame_date_delete.grid_rowconfigure(0, weight=1)
+        frame_date_delete.grid_columnconfigure(0, weight=1)
+        # add the option menu
+        date_option_label = Label(frame_date_delete, text="ZIUA", justify="center",
+                                  font=("Helvetica", 11, "bold"),
+                                  cursor="star", fg="#C6CB3B", bg="#BC6678")
+        date_option_label.place(x=5, y=50)
+        date_delete = OptionMenu(frame_date_delete, date_delete_value, *list_tables)
+        date_delete.config(bg="#BC6678", font=("Helvetica", 11, "bold"), fg="#C6CB3B",
+                           width=18)
+        date_delete.place(x=65, y=49)
+        # add ok button in this frame
+        ok_button = Button(frame_date_delete, text="VIZUALIZARE", width=20, height=2, fg="#1E2729", bg="#248B48",
+                           font=("Helvetica", 9, "bold"),
+                           command=lambda: self.view_results_day(date_delete_value.get(), frame_treeview_results))
+        ok_button.place(x=55, y=130)
+        # ok_button.place(relx=0.3, rely=0.7)
+        # create frame for treeview results
+        frame_treeview_results = LabelFrame(frame_title, fg="#EEEBF3", bg="#BC6678", font=("Helvetica", 15, "bold"),
+                                            bd=5,
+                                            cursor="target", width=750, height=400, labelanchor="n",
+                                            text="PROGRAMARI:",
+                                            relief=tkinter.GROOVE)
+        frame_treeview_results.grid(padx=40, pady=10, row=0, column=1, )  # put it in the middle
+        frame_treeview_results.grid_rowconfigure(0, weight=1)
+        frame_treeview_results.grid_columnconfigure(0, weight=1)
+        # add cancel button
+        cancel_button = Button(frame_title, text="CANCEL", width=30, height=2, fg="#1E2729", bg="#E8E7D8",
+                               font=("Helvetica", 9, "bold"), command=self.cancel_form_delete)
+        cancel_button.place(x=35, y=360)
+        root_delete_appointments.mainloop()
+
+    '''
     MENU PART
     '''
 
@@ -701,7 +988,7 @@ class GuiApp:
                                relief=tkinter.GROOVE, )  # command=self.create_edit_gui)
         delete_button = Button(app_menu, fg="#EEEBF3", bg="#BC6678", font=("Helvetica", 9, "bold"), bd=4,
                                cursor="target", width=20, height=2, justify="center", text="STERGERE",
-                               relief=tkinter.GROOVE, )  # command=self.create_delete_gui)
+                               relief=tkinter.GROOVE, command=self.create_delete_gui)
         search_button = Button(app_menu, fg="#EEEBF3", bg="#32BBAD", font=("Helvetica", 9, "bold"), bd=4,
                                cursor="target", width=20, height=2, justify="center", text="CAUTARE PROGRAMARE",
                                relief=tkinter.GROOVE, command=self.create_search_gui)

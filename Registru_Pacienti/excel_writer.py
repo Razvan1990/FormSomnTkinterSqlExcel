@@ -85,3 +85,5 @@ class ExcelWriter:
             messagebox.showerror("INCHIDETI FISIER EXCEL",
                                  "Fisierul Registru Pacienti este deschis! Va rog inchideti-l")
             raise Exception("EXCEL file is already opened")
+
+
