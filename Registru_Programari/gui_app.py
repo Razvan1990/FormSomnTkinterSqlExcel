@@ -709,6 +709,18 @@ class GuiApp:
         if list_appointment_delete[3] == "" or list_appointment_delete[4] == "":
             messagebox.showerror("SLOT GOL", "NU EXISTA O PROGRAMARE LA ACEST SLOT")
             return
+        '''GET DATA FROM SQL COMMAND IN ORDER TO AVOID TELEPHONE BUG FROM TREEVIEW'''
+        database = os.path.join(constants_programari.DATABASE_FOLDER, constants_programari.NAME_DATABASE)
+        connection = sqlite3.connect(database)
+        my_cursor = connection.cursor()
+        my_cursor.execute("""SELECT * FROM """ + date_selected + """ WHERE oid=:id""",
+                          # dummy dictionary
+                          {
+                              "id": list_appointment_delete[0]
+                          }
+                          )
+        record_list = my_cursor.fetchall()
+        print(record_list)
         root_delete_appointment_gui = Tk()
         root_delete_appointment_gui.title("STERGERE")
         image_ico = os.path.join(self.pictures_folder, constants_programari.PICTURE_FOLDER,
@@ -797,26 +809,19 @@ class GuiApp:
         cancel_button.place(x=280, y=320)
 
         # MAKE THE ENTRIES ALREADY COMPLETED AND DISABLE THEM
-        hour_entry_delete.insert(0, list_appointment_delete[1])
+        hour_entry_delete.insert(0, record_list[0][0])
         hour_entry_delete["state"] = tkinter.DISABLED
 
-        first_name_entry_delete.insert(0, list_appointment_delete[2])
+        first_name_entry_delete.insert(0, record_list[0][1])
         first_name_entry_delete["state"] = tkinter.DISABLED
 
-        last_name_entry_delete.insert(0, list_appointment_delete[3])
+        last_name_entry_delete.insert(0, record_list[0][2])
         last_name_entry_delete["state"] = tkinter.DISABLED
 
-        cnp_entry_delete.insert(0, str(list_appointment_delete[4]))
+        cnp_entry_delete.insert(0, record_list[0][3])
         cnp_entry_delete["state"] = tkinter.DISABLED
 
-        # check first if telephone number starts with 0 or not -> based on len number
-        if len(str(list_appointment_delete[5])) == 9 or str(list_appointment_delete[5])[0] == "7" or \
-                str(list_appointment_delete[5])[0] == "8":
-            correct_number = "0" + str(list_appointment_delete[5])  # romanian number
-        else:
-            correct_number = str(list_appointment_delete[5])
-
-        telephone_entry_delete.insert(0, correct_number)
+        telephone_entry_delete.insert(0, record_list[0][4])
         telephone_entry_delete["state"] = tkinter.DISABLED
 
     def view_results_day(self, date_selected, root_window):
