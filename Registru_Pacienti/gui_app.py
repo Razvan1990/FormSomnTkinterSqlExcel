@@ -231,7 +231,7 @@ class GuiApp:
                               "DATA": cal.get_date(),
                               "PRENUME": first_name_entry.get().upper(),
                               "NUME": last_name_entry.get().upper(),
-                              "CNP": str(cnp_entry.get()).rstrip(),
+                              "CNP": str(cnp_entry.get()),
                               "TELEFON": str(telephone_number_entry.get()),
                               "STRADA": address_entry_street.get().upper(),
                               "LOCALITATE": address_entry_locality.get().upper(),
