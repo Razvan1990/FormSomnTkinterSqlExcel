@@ -4,7 +4,7 @@ import tkinter
 from tkinter import *
 from tkinter import messagebox
 from tkinter import ttk
-from tkcalendar import Calendar
+from tkcalendar import Calendar, DateEntry
 from datetime import datetime
 from checker_fields import CheckFields
 from checkers_sql import CheckSqlCommands
@@ -720,7 +720,6 @@ class GuiApp:
                           }
                           )
         record_list = my_cursor.fetchall()
-        print(record_list)
         root_delete_appointment_gui = Tk()
         root_delete_appointment_gui.title("STERGERE")
         image_ico = os.path.join(self.pictures_folder, constants_programari.PICTURE_FOLDER,
@@ -901,7 +900,7 @@ class GuiApp:
         date_delete_value = StringVar()
         # set the value of the option menu to the first chronological day of the list
         date_delete_value.set(list_tables[0])
-        # root_add.protocol("WM_DELETE_WINDOW", self.cancel_x_button)
+        root_delete_appointments.protocol("WM_DELETE_WINDOW", self.cancel_x_button)
         # create frame for delete
         frame_title = LabelFrame(root_delete_appointments, fg="#EEEBF3", bg="#BC6678", font=("Helvetica", 25, "bold"),
                                  bd=5,
@@ -949,6 +948,574 @@ class GuiApp:
         cancel_button.place(x=35, y=360)
         root_delete_appointments.mainloop()
 
+    """
+    EDIT PART
+    """
+
+    def update_record(self, date_selected, new_day, new_hour, first_name, last_name, cnp, telephone_number):
+        ''''
+        a.FIRST WE DO THE GENERAL CHECKS
+        '''
+        # 1.check if everything is completed
+        if self.checkers_fields.check_if_necessary_fields_completed(last_name, cnp, telephone_number):
+            messagebox.showerror(parent=root_update_appointment_gui, title="DATE NECOMPLETATE",
+                                 message="COMPLETATI DATELE OBLIGATORII")
+            return
+            # 2. check cnp
+        message_error_cnp, option_error_cnp = self.checkers_fields.get_cnp_errors(cnp)
+        if option_error_cnp == 1:
+            messagebox.showerror(parent=root_update_appointment_gui, title="CNP INVALID", message=message_error_cnp)
+            return
+        elif option_error_cnp == 2:
+            messagebox.showerror(parent=root_update_appointment_gui, title="CNP INVALID", message=message_error_cnp)
+            return
+        elif option_error_cnp == 3:
+            messagebox.showerror(parent=root_update_appointment_gui, title="CNP INVALID", message=message_error_cnp)
+            return
+            # 3. check telephone number
+        message_error_telephone, option_error_telephone = self.checkers_fields.get_telephone_number_errors(
+            telephone_number)
+        if option_error_telephone != 0:
+            messagebox.showerror(parent=root_update_appointment_gui, title="NUMAR INVALID",
+                                 message=message_error_telephone)
+            return
+        '''
+        B. CHECK IF THERE IS AN UPDATE
+        '''
+        database = os.path.join(constants_programari.DATABASE_FOLDER, constants_programari.NAME_DATABASE)
+        connection = sqlite3.connect(database)
+        my_cursor = connection.cursor()
+        my_cursor.execute("""SELECT * FROM """ + date_selected + """ WHERE oid=:id""",
+                          # dummy dictionary
+                          {
+                              "id": list_appointment_update[0]
+                          }
+                          )
+        record_list = my_cursor.fetchall()
+        # get original list
+        original_list = list()
+        original_list.append(date_selected)
+        original_list.append(record_list[0][0])
+        original_list.append(record_list[0][1])
+        original_list.append(record_list[0][2])
+        original_list.append(record_list[0][3])
+        original_list.append(record_list[0][4])
+        # check new list
+        update_list = list()
+        new_day_string = new_day.strftime("%d-%m-%Y")
+        new_day_converted = self.checkers_fields.convert_date(new_day_string)
+        update_list.append(new_day_converted)
+        update_list.append(new_hour)
+        update_list.append(first_name)
+        update_list.append(last_name)
+        update_list.append(cnp)
+        update_list.append(telephone_number)
+        # check lists
+        if self.checkers_sql.compare_list(original_list, update_list):
+            messagebox.showerror(parent=root_update_appointment_gui, title="FARA MODIFICARI",
+                                 message="NU A FOST EFECTUATA NICI O MODIFICARE LA PROGRAMARE")
+            return
+        '''
+        C. CHECK FOR UPDATE ON DAY
+            C1. NO DIFFERENCE ON DAY -> CHECK IF DIFFERENCE ON HOUR 
+        '''
+        if date_selected == new_day_converted:
+            '''D. CHECK IF WE HAVE AN MODIFICATION ON THE HOUR'''
+            if record_list[0][0] == new_hour:
+                '''D1. In this case we will do just a simple update'''
+                my_cursor.execute("""UPDATE """ + date_selected + """ SET
+                       PRENUME=:first_name_update,
+                       NUME=:last_name_update,
+                       CNP=:cnp_update,
+                       TELEFON=:telephone_update WHERE oid=:id""",
+                                  # dummy dictionary
+                                  {
+                                      "first_name_update": first_name,
+                                      "last_name_update": last_name,
+                                      "cnp_update": cnp,
+                                      "telephone_update": telephone_number,
+                                      "id": list_appointment_update[0]
+                                  }
+                                  )
+                connection.commit()
+                connection.close()
+                message_appointment_update = "Datele pacientului {} au fost modificate".format(
+                    last_name)
+                messagebox.showinfo(parent=root_update_appointment_gui, title="REPROGRAMARE",
+                                    message=message_appointment_update)
+                root_update_appointment_gui.destroy()
+                root_update_gui.destroy()
+                self.create_main_gui()
+                return
+            else:
+                '''D2. In this case we will do a check to see if we already have something on the new hour
+                 first do a delete of the current things appointment and then an update based on the new hour'''
+                # check part
+                my_cursor.execute("SELECT * FROM " + date_selected + " WHERE ORA='" + new_hour + "'")
+                list_results_hour = my_cursor.fetchall()
+                if list_results_hour[0][2] != "" or list_results_hour[0][3] != "":
+                    messagebox.showerror(parent=root_update_appointment_gui, title="SLOT OCUPAT",
+                                         message="ACEST SLOT ESTE DEJA REZERVAT")
+                    return
+                # delete part
+                my_cursor.execute("""UPDATE """ + date_selected + """ SET
+                        PRENUME=:first_name_update,
+                        NUME=:last_name_update,
+                        CNP=:cnp_update,
+                        TELEFON=:telephone_update WHERE oid=:id""",
+                                  # dummy dictionary
+                                  {
+                                      "first_name_update": "",
+                                      "last_name_update": "",
+                                      "cnp_update": "",
+                                      "telephone_update": "",
+                                      "id": list_appointment_update[0]
+                                  }
+                                  )
+                connection.commit()
+                connection.close()
+                # now do the update with new hour
+                database = os.path.join(constants_programari.DATABASE_FOLDER, constants_programari.NAME_DATABASE)
+                connection = sqlite3.connect(database)
+                my_cursor = connection.cursor()
+                my_cursor.execute("""UPDATE """ + date_selected + """ SET
+                                    PRENUME=:first_name_update,
+                                    NUME=:last_name_update,
+                                    CNP=:cnp_update,
+                                    TELEFON=:telephone_update WHERE ORA=:new_hour""",
+                                  # dummy dictionary
+                                  {
+                                      "first_name_update": first_name,
+                                      "last_name_update": last_name,
+                                      "cnp_update": cnp,
+                                      "telephone_update": telephone_number,
+                                      "new_hour": new_hour
+
+                                  }
+                                  )
+                connection.commit()
+                connection.close()
+                message_appointment_update = "Pacientul {} a fost reprogramat in data de {} in intervalul orar {}".format(
+                    last_name, date_selected[2:].replace("_", "-"), new_hour)
+                messagebox.showinfo(parent=root_update_appointment_gui, title="REPROGRAMARE",
+                                    message=message_appointment_update)
+                # send sms to recipient
+                '''THIS PART IS WORKING BUT SMS CAN BE SENT JUST TO VERIFIED NUMBER(ME)'''
+                # self.sms_sender.add_phone_to_list(telephone_number,first_name_entry_add.get(), name)
+                # self.sms_sender.send_sms(telephone_number,selection_day,hour_entry.get())
+                '''SECOND METHOD WORKS BETTER FROM SINCH'''
+                # self.sms_sender.send_sms2(telephone_number,selection_day, hour_entry.get())
+                root_update_appointment_gui.destroy()
+                root_update_gui.destroy()
+                self.create_main_gui()
+                return
+        else:
+            '''
+            E. IN THIS CASE THE DAY HAS BEEN MODIFIED
+            '''
+            '''E1.We check first that the new day is not in the past'''
+            if self.checkers_fields.check_selected_date(new_day_converted[2:].replace("_", "-")):
+                messagebox.showerror(parent=root_update_appointment_gui, title="DATA IN TRECUT",
+                                     message="DATA SELECTATA ESTE IN TRECUT")
+            '''E2. We first check to see if the new_day_converted exists in the list of tables'''
+            # get list with all days -> tables
+            sql_retrieve_table_command = """SELECT name FROM sqlite_schema WHERE type ='table' """
+            my_cursor.execute(sql_retrieve_table_command)
+            list_tables_sql = my_cursor.fetchall()
+            list_known_tables = list()
+            for tuple_name in list_tables_sql:
+                list_known_tables.append(tuple_name[0])
+            '''E3. Now we check if there is already a table with this date-> if so we check to see if the new chosen slot is ok'''
+            if new_day_converted in list_known_tables:
+                my_cursor.execute("SELECT * FROM " + new_day_converted + " WHERE ORA='" + new_hour + "'")
+                list_results_day = my_cursor.fetchall()
+                if list_results_day[0][2] != "" or list_results_day[0][3] != "":
+                    messagebox.showerror(parent=root_update_appointment_gui, title="SLOT OCUPAT",
+                                         message="ACEST SLOT ESTE DEJA REZERVAT")
+                    return
+                '''E4.DELETE APPOINTMENT FROM PREVIOUS DAY'''
+                my_cursor.execute("""UPDATE """ + date_selected + """ SET
+                                       PRENUME=:first_name_update,
+                                       NUME=:last_name_update,
+                                       CNP=:cnp_update,
+                                       TELEFON=:telephone_update WHERE oid=:id""",
+                                  # dummy dictionary
+                                  {
+                                      "first_name_update": "",
+                                      "last_name_update": "",
+                                      "cnp_update": "",
+                                      "telephone_update": "",
+                                      "id": list_appointment_update[0]
+                                  }
+                                  )
+                connection.commit()
+                connection.close()
+                '''E5. AFTER THIS WE NEED TO JUST DO THE UPDATE ON THE NEW SELECTED DAY'''
+                database = os.path.join(constants_programari.DATABASE_FOLDER, constants_programari.NAME_DATABASE)
+                connection = sqlite3.connect(database)
+                my_cursor = connection.cursor()
+                my_cursor.execute("""UPDATE """ + new_day_converted + """ SET
+                                                    PRENUME=:first_name_update,
+                                                    NUME=:last_name_update,
+                                                    CNP=:cnp_update,
+                                                    TELEFON=:telephone_update WHERE ORA=:new_hour""",
+                                  # dummy dictionary
+                                  {
+                                      "first_name_update": first_name,
+                                      "last_name_update": last_name,
+                                      "cnp_update": cnp,
+                                      "telephone_update": telephone_number,
+                                      "new_hour": new_hour
+
+                                  }
+                                  )
+                connection.commit()
+                connection.close()
+                message_appointment_update = "Pacientul {} a fost reprogramat in data de {} in intervalul orar {}".format(
+                    last_name, new_day_converted[2:].replace("_", "-"), new_hour)
+                messagebox.showinfo(parent=root_update_appointment_gui, title="REPROGRAMARE",
+                                    message=message_appointment_update)
+                # send sms to recipient
+                '''THIS PART IS WORKING BUT SMS CAN BE SENT JUST TO VERIFIED NUMBER(ME)'''
+                # self.sms_sender.add_phone_to_list(telephone_number,first_name_entry_add.get(), name)
+                # self.sms_sender.send_sms(telephone_number,selection_day,hour_entry.get())
+                '''SECOND METHOD WORKS BETTER FROM SINCH'''
+                # self.sms_sender.send_sms2(telephone_number,selection_day, hour_entry.get())
+                root_update_appointment_gui.destroy()
+                root_update_gui.destroy()
+                self.create_main_gui()
+                return
+            else:
+                '''
+                F. IN THIS CASE WE WILL DO A BASIC UPDATE WITH A NEW TABLE CREATED
+                '''
+                '''F1. DELETE APPOINTMENT FROM PREVIOUS DAY'''
+                my_cursor.execute("""UPDATE """ + date_selected + """ SET
+                                                      PRENUME=:first_name_update,
+                                                      NUME=:last_name_update,
+                                                      CNP=:cnp_update,
+                                                      TELEFON=:telephone_update WHERE oid=:id""",
+                                  # dummy dictionary
+                                  {
+                                      "first_name_update": "",
+                                      "last_name_update": "",
+                                      "cnp_update": "",
+                                      "telephone_update": "",
+                                      "id": list_appointment_update[0]
+                                  }
+                                  )
+                connection.commit()
+                connection.close()
+                '''F2. CREATE NEW TABLE WITH INITIAL HOURS'''
+                self.checkers_sql.create_table(new_day_converted)
+                self.checkers_sql.create_initial_hours_for_table(new_day_converted)
+                '''F3. NOW WE DO AN ORDINARY UPDATE'''
+                database = os.path.join(constants_programari.DATABASE_FOLDER, constants_programari.NAME_DATABASE)
+                connection = sqlite3.connect(database)
+                my_cursor = connection.cursor()
+                my_cursor.execute("""UPDATE """ + new_day_converted + """ SET
+                                                                   PRENUME=:first_name_update,
+                                                                   NUME=:last_name_update,
+                                                                   CNP=:cnp_update,
+                                                                   TELEFON=:telephone_update WHERE ORA=:new_hour""",
+                                  # dummy dictionary
+                                  {
+                                      "first_name_update": first_name,
+                                      "last_name_update": last_name,
+                                      "cnp_update": cnp,
+                                      "telephone_update": telephone_number,
+                                      "new_hour": new_hour
+
+                                  }
+                                  )
+                connection.commit()
+                connection.close()
+                message_appointment_update = "Pacientul {} a fost reprogramat in data de {} in intervalul orar {}".format(
+                    last_name, new_day_converted[2:].replace("_", "-"), new_hour)
+                messagebox.showinfo(parent=root_update_appointment_gui, title="REPROGRAMARE",
+                                    message=message_appointment_update)
+                # send sms to recipient
+                '''THIS PART IS WORKING BUT SMS CAN BE SENT JUST TO VERIFIED NUMBER(ME)'''
+                # self.sms_sender.add_phone_to_list(telephone_number,first_name_entry_add.get(), name)
+                # self.sms_sender.send_sms(telephone_number,selection_day,hour_entry.get())
+                '''SECOND METHOD WORKS BETTER FROM SINCH'''
+                # self.sms_sender.send_sms2(telephone_number,selection_day, hour_entry.get())
+                root_update_appointment_gui.destroy()
+                root_update_gui.destroy()
+                self.create_main_gui()
+                return
+
+
+    def cancel_update_record(self):
+        root_update_appointment_gui.destroy()
+
+    def update_appointment_gui(self, date_selected):
+        global root_update_appointment_gui
+        global day_update_entry
+        global hour_entry_update
+        global first_name_entry_update
+        global last_name_entry_update
+        global cnp_entry_update
+        global telephone_entry_update
+        global list_appointment_update
+        # stringvar
+        global hour_entry_update_value
+        '''CHECK FIRST IF AN EMPTY RECORD IS PRESSED'''
+        list_appointment_update = []
+        for appointment in update_appointments_treeview.selection():
+            appointment_data = update_appointments_treeview.item(appointment)
+            appointment_list_values = appointment_data["values"]
+            list_appointment_update = appointment_list_values
+        if list_appointment_update[3] == "" or list_appointment_update[4] == "":
+            messagebox.showerror("SLOT GOL", "NU EXISTA O PROGRAMARE LA ACEST SLOT")
+            return
+        '''GET DATA FROM SQL COMMAND IN ORDER TO AVOID TELEPHONE BUG FROM TREEVIEW'''
+        database = os.path.join(constants_programari.DATABASE_FOLDER, constants_programari.NAME_DATABASE)
+        connection = sqlite3.connect(database)
+        my_cursor = connection.cursor()
+        my_cursor.execute("""SELECT * FROM """ + date_selected + """ WHERE oid=:id""",
+                          # dummy dictionary
+                          {
+                              "id": list_appointment_update[0]
+                          }
+                          )
+        record_list = my_cursor.fetchall()
+        root_update_appointment_gui = Toplevel()
+        root_update_appointment_gui.title("EDITARE")
+        image_ico = os.path.join(self.pictures_folder, constants_programari.PICTURE_FOLDER,
+                                 constants_programari.SOMN_ICO_IMAGE)
+        root_update_appointment_gui.iconbitmap(image_ico)
+        root_update_appointment_gui.geometry("600x500")
+        root_update_appointment_gui["bg"] = "#0C79E7"
+        root_update_appointment_gui.resizable(NO, NO)
+        hour_entry_update_value = StringVar()
+        hour_entry_update_value.set(record_list[0][0])
+        frame_title = LabelFrame(root_update_appointment_gui, fg="#EEEBF3", bg="#0C79E7",
+                                 font=("Helvetica", 20, "bold"),
+                                 bd=5,
+                                 cursor="target", width=500, height=425, labelanchor="n", text="EDITARE PROGRAMARE",
+                                 relief=tkinter.GROOVE)
+        frame_title.grid(padx=42, pady=10, row=0, column=0, )  # put it in the middle
+        frame_title.grid_rowconfigure(0, weight=1)
+        frame_title.grid_columnconfigure(0, weight=1)
+        '''CREATE ENTRIES AND LABELS'''
+        # Date
+        # split date
+        date_split = self.checkers_fields.split_date(date_selected[2:].replace("_", "-"))
+        day_update_entry = DateEntry(frame_title, selectmode='day', date_pattern="DD-MM-YYYY", bd=2,
+                                     headersbackground="#EBFE8A",
+                                     headersforeground="#1E1F1C", selectbackground="#209DBF",
+                                     selectforeground="#F26B18",
+                                     weekendbackground="#8D7B80", font=("Helvetica", 9, "bold"), bg="#9EEB8D",
+                                     day=int(date_split[0]), month=int(date_split[1]), year=int(date_split[2]))
+        day_update_entry.place(x=250, y=30)
+        # hour
+        list_hours = self.checkers_fields.get_hours_list()
+        hour_entry_update = OptionMenu(frame_title, hour_entry_update_value, *list_hours)
+        hour_entry_update.config(bg="#0C79E7", font=("Helvetica", 9, "bold"), fg="#C4E028",
+                                 width=22)
+        hour_entry_update.place(x=250, y=80)
+        # first_name
+        first_name_entry_update = Entry(frame_title, width=25, justify="center", font=("Helvetica", 9, "bold"),
+                                        cursor="target",
+                                        bg="#D4E2D0")
+        first_name_entry_update.place(x=250, y=130)
+        # last_name
+        last_name_entry_update = Entry(frame_title, width=25, justify="center", font=("Helvetica", 9, "bold"),
+                                       cursor="target",
+                                       bg="#D4E2D0")
+        last_name_entry_update.place(x=250, y=180)
+        # cnp
+        cnp_entry_update = Entry(frame_title, width=25, justify="center", font=("Helvetica", 9, "bold"),
+                                 cursor="target",
+                                 bg="#D4E2D0")
+        cnp_entry_update.place(x=250, y=230)
+        # telephone
+        telephone_entry_update = Entry(frame_title, width=25, justify="center",
+                                       font=("Helvetica", 9, "bold"),
+                                       cursor="target",
+                                       bg="#D4E2D0")
+        telephone_entry_update.place(x=250, y=280)
+        # LABELS
+        date_label_update = Label(frame_title, text="DATA*", justify="center",
+                                  font=("Comic Sans", 11, "bold italic"),
+                                  cursor="star", fg="#DA3B22", bg="#0C79E7", )
+        date_label_update.place(x=50, y=30)
+
+        hour_label_update = Label(frame_title, text="ORA*", justify="center",
+                                  font=("Helvetica", 11, "bold"),
+                                  cursor="star", fg="#C6E744", bg="#0C79E7", )
+        hour_label_update.place(x=50, y=80)
+
+        first_name_label_update = Label(frame_title, text="PRENUME", justify="center",
+                                        font=("Helvetica", 11, "bold"),
+                                        cursor="star", fg="#C6E744", bg="#0C79E7", )
+        first_name_label_update.place(x=50, y=130)
+
+        last_name_label_update = Label(frame_title, text="NUME*", justify="center",
+                                       font=("Helvetica", 11, "bold"),
+                                       cursor="star", fg="#C6E744", bg="#0C79E7", )
+        last_name_label_update.place(x=50, y=180)
+
+        cnp_label_update = Label(frame_title, text="CNP*", justify="center",
+                                 font=("Helvetica", 11, "bold"),
+                                 cursor="star", fg="#C6E744", bg="#0C79E7", )
+        cnp_label_update.place(x=50, y=230)
+
+        telephone_label_update = Label(frame_title, text="TELEFON*", justify="center",
+                                       font=("Helvetica", 11, "bold"),
+                                       cursor="star", fg="#C6E744", bg="#0C79E7", )
+        telephone_label_update.place(x=50, y=280)
+        # add buttons
+
+        ok_button_update = Button(frame_title, text="UPDATARE", width=20, height=2, fg="#1E2729", bg="#248B48",
+                                  font=("Helvetica", 9, "bold"),
+                                  command=lambda: self.update_record(date_selected, day_update_entry.get_date(),
+                                                                     hour_entry_update_value.get(),
+                                                                     first_name_entry_update.get().upper(),
+                                                                     last_name_entry_update.get().upper(),
+                                                                     cnp_entry_update.get(),
+                                                                     telephone_entry_update.get()))
+        cancel_button = Button(frame_title, text="CANCEL", width=20, height=2, fg="#1E2729", bg="#E8E7D8",
+                               font=("Helvetica", 9, "bold"), command=self.cancel_update_record)
+        ok_button_update.place(x=50, y=320)
+        cancel_button.place(x=280, y=320)
+
+        # MAKE THE ENTRIES ALREADY COMPLETED
+
+        first_name_entry_update.insert(0, record_list[0][1])
+
+        last_name_entry_update.insert(0, record_list[0][2])
+
+        cnp_entry_update.insert(0, record_list[0][3])
+
+        telephone_entry_update.insert(0, record_list[0][4])
+
+    def view_result_day_update(self, date_selected, root_window):
+        '''SQL SELECTION'''
+        database = os.path.join(constants_programari.DATABASE_FOLDER, constants_programari.NAME_DATABASE)
+        connection = sqlite3.connect(database)
+        my_cursor = connection.cursor()
+        my_cursor.execute("""SELECT oid, * FROM """ + date_selected)
+        list_appointments = my_cursor.fetchall()
+        connection.close()
+        global update_appointments_treeview
+        # create the columns  for the treeview
+        columns = ("ID", "ORA", "PRENUME", "NUME", "CNP", "TELEFON")
+        update_appointments_treeview = ttk.Treeview(root_window, show='headings', columns=columns,
+                                                    height=16, )
+        # ADD THE COLUMNS
+        # define the headings
+        update_appointments_treeview.heading(0, text="ID", anchor=tkinter.CENTER)
+        update_appointments_treeview.heading(1, text="ORA", anchor=tkinter.CENTER)
+        update_appointments_treeview.heading(2, text="PRENUME", anchor=tkinter.CENTER)
+        update_appointments_treeview.heading(3, text="NUME", anchor=tkinter.CENTER)
+        update_appointments_treeview.heading(4, text="CNP", anchor=tkinter.CENTER)
+        update_appointments_treeview.heading(5, text="TELEFON", anchor=tkinter.CENTER)
+        # redefine column dimensions
+        update_appointments_treeview.column("ID", width=25, )
+        update_appointments_treeview.column("ORA", width=125)
+        update_appointments_treeview.column("PRENUME", width=150, stretch=NO)
+        update_appointments_treeview.column("NUME", width=150, stretch=NO)
+        update_appointments_treeview.column("CNP", width=125, stretch=NO)
+        update_appointments_treeview.column("TELEFON", width=125, stretch=NO)
+        update_appointments_treeview.tag_configure("orow")
+        # create a custom style
+        style = ttk.Style(root_window)
+        style.theme_use("clam")
+        style.configure("Treeview.Heading", background="#D4EE77", foreground="#C7651D", justify="center")
+        style.configure("Treeview", background="#5B5F51", fieldbackground="#5B5F51", foreground="#F1F7E5",
+                        font=("Helvetica", 10, "bold"))
+        # change selection color
+        style.map("Treeview", background=[("selected", "#A3D623")])
+        # populate the list
+        for appointment in list_appointments:
+            record_update = list()
+            record_update.append(str(appointment[0]))
+            record_update.append(appointment[1])
+            record_update.append(appointment[2])
+            record_update.append(appointment[3])
+            record_update.append(str(appointment[4]))
+            record_update.append(str(appointment[5]))
+            record_update_tuple_update = tuple(record_update)
+            update_appointments_treeview.insert('', tkinter.END, values=record_update_tuple_update)
+        # put treeview on frame
+        update_appointments_treeview.place(x=15, y=10)
+        root_window["text"] = "PROGRAMARI: " + date_selected[2:].replace("_", "-")
+        update_appointments_treeview.bind("<Double-Button-1>", lambda event: self.update_appointment_gui(date_selected))
+
+    def cancel_form_update(self):
+        root_update_gui.destroy()
+        self.create_main_gui()
+
+    def create_update_gui(self):
+        global root_update_gui
+        global date_update
+        app_menu.destroy()
+        '''RETRIEVE ALL TABLES'''
+        list_tables = self.checkers_sql.get_list_with_tables()
+        # stringvar for date update
+        global date_update_value
+        root_update_gui = Tk()
+        root_update_gui.title("UPDATE")
+        image_ico = os.path.join(self.pictures_folder, constants_programari.PICTURE_FOLDER,
+                                 constants_programari.SOMN_ICO_IMAGE)
+        root_update_gui.iconbitmap(image_ico)
+        root_update_gui.geometry("1200x500")
+        root_update_gui["bg"] = "#0C79E7"
+        root_update_gui.resizable(NO, NO)
+        date_update_value = StringVar()
+        # set the value of the option menu to the first chronological day of the list
+        date_update_value.set(list_tables[0])
+        root_update_gui.protocol("WM_DELETE_WINDOW", self.cancel_x_button)
+        # create frame for update
+        frame_title = LabelFrame(root_update_gui, fg="#EEEBF3", bg="#0C79E7", font=("Helvetica", 25, "bold"),
+                                 bd=5,
+                                 cursor="target", width=1100, height=450, labelanchor="n", text="EDITARE PROGRAMARE",
+                                 relief=tkinter.GROOVE)
+        frame_title.grid(padx=32, pady=10, row=0, column=0, )  # put it in the middle
+        frame_title.grid_rowconfigure(0, weight=1)
+        frame_title.grid_columnconfigure(0, weight=1)
+        # create a frame for datetime
+        frame_date_update = LabelFrame(frame_title, fg="#EEEBF3", bg="#0C79E7", font=("Helvetica", 15, "bold"),
+                                       bd=5,
+                                       cursor="target", width=275, height=250, labelanchor=tkinter.N,
+                                       text="SELECTIE ZI",
+                                       relief=tkinter.GROOVE)
+        frame_date_update.grid(row=0, column=0, padx=10, pady=10, sticky=tkinter.EW)
+        frame_date_update.grid_rowconfigure(0, weight=1)
+        frame_date_update.grid_columnconfigure(0, weight=1)
+        # add the option menu
+        date_option_label = Label(frame_date_update, text="ZIUA", justify="center",
+                                  font=("Helvetica", 11, "bold"),
+                                  cursor="star", fg="#C6CB3B", bg="#0C79E7")
+        date_option_label.place(x=5, y=50)
+        date_update = OptionMenu(frame_date_update, date_update_value, *list_tables)
+        date_update.config(bg="#0C79E7", font=("Helvetica", 11, "bold"), fg="#C6CB3B",
+                           width=18)
+        date_update.place(x=65, y=49)
+        # add ok button in this frame
+        ok_button = Button(frame_date_update, text="VIZUALIZARE", width=20, height=2, fg="#1E2729", bg="#248B48",
+                           font=("Helvetica", 9, "bold"),
+                           command=lambda: self.view_result_day_update(date_update_value.get(),
+                                                                       frame_treeview_results_update))
+        ok_button.place(x=55, y=130)
+        # create frame for treeview results
+        frame_treeview_results_update = LabelFrame(frame_title, fg="#EEEBF3", bg="#0C79E7",
+                                                   font=("Helvetica", 15, "bold"),
+                                                   bd=5,
+                                                   cursor="target", width=750, height=400, labelanchor="n",
+                                                   text="PROGRAMARI:",
+                                                   relief=tkinter.GROOVE)
+        frame_treeview_results_update.grid(padx=40, pady=10, row=0, column=1, )  # put it in the middle
+        frame_treeview_results_update.grid_rowconfigure(0, weight=1)
+        frame_treeview_results_update.grid_columnconfigure(0, weight=1)
+        # add cancel button
+        cancel_button = Button(frame_title, text="CANCEL", width=30, height=2, fg="#1E2729", bg="#E8E7D8",
+                               font=("Helvetica", 9, "bold"), command=self.cancel_form_update)
+        cancel_button.place(x=35, y=360)
+        root_update_gui.mainloop()
+
     '''
     MENU PART
     '''
@@ -990,7 +1557,7 @@ class GuiApp:
                             relief=tkinter.GROOVE, command=self.create_add_gui)
         select_button = Button(app_menu, fg="#EEEBF3", bg="#0C79E7", font=("Helvetica", 9, "bold"), bd=4,
                                cursor="target", width=20, height=2, justify="center", text="EDITARE",
-                               relief=tkinter.GROOVE, )  # command=self.create_edit_gui)
+                               relief=tkinter.GROOVE, command=self.create_update_gui)
         delete_button = Button(app_menu, fg="#EEEBF3", bg="#BC6678", font=("Helvetica", 9, "bold"), bd=4,
                                cursor="target", width=20, height=2, justify="center", text="STERGERE",
                                relief=tkinter.GROOVE, command=self.create_delete_gui)

@@ -80,4 +80,11 @@ class CheckSqlCommands:
             list_tables_sql_sorted.append(sorted_table)
         return list_tables_sql_sorted
 
+    def compare_list(self, original_list, updated_list):
+        for i in range(0, len(original_list)):
+            if original_list[i] != updated_list[i]:
+                return False
+        return True
+
+
 

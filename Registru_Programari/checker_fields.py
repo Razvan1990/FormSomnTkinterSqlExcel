@@ -1,5 +1,6 @@
 import datetime
 from datetime import datetime
+import constants_programari
 
 
 class CheckFields:
@@ -80,4 +81,14 @@ class CheckFields:
         #this function is used to create the excel sheets with date and to sort list by dates
         original_date = date_table_name[2:].replace("_", "-")
         return original_date
+
+    def get_hours_list(self):
+        list_hours_results = []
+        for element in constants_programari.STARTING_TABLE_DAY:
+            list_hours_results.append(element[0])
+        return list_hours_results
+
+
+
+
 
