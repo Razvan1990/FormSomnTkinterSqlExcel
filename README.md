@@ -1,7 +1,7 @@
 The program is composed of two quite identical GUIs, one for keeping track of patients and one for keeping track of apppointments
 
-It uses the tkinter module and the sqlite3 module as main modules
-As custom modules, the pandas and openpyxl for excel creation/editing as well as a api in order to send text messages on phone when an appointment is created/updated.
+It uses the tkinter module and the sqlite3 module as main modules.
+As custom modules, the pandas and openpyxl for excel creation/editing as well as an api in order to send text messages on phone when an appointment is created/updated.
 
 REGISTRU_PACIENTI
 
