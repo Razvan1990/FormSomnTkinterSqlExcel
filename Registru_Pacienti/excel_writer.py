@@ -11,11 +11,11 @@ import constants_pacienti
 class ExcelWriter:
 
     def get_max_value(self, list_text):
-        max = list_text[0]
+        maxVal = list_text[0]
         for i in range(1, len(list_text)):
-            if list_text[i] > max:
-                max = list_text[i]
-        return max
+            if list_text[i] > maxVal:
+                maxVal = list_text[i]
+        return maxVal
 
     def write_to_excel(self, table_name):
         excel_location = os.path.join(os.getcwd(), constants_pacienti.EXCEL_FOLDER, constants_pacienti.NAME_EXCEL)
@@ -23,7 +23,6 @@ class ExcelWriter:
         '''SQL SELECT'''
         database = os.path.join(os.getcwd(), constants_pacienti.DATABASE_FOLDER, constants_pacienti.NAME_DATABASE)
         connection = sqlite3.connect(database)
-        my_cursor = connection.cursor()
         # my_cursor.execute("""SELECT * FROM """+table_name)
         # list_patients = my_cursor.fetchall()
         sql = "SELECT * FROM " + table_name
@@ -77,7 +76,9 @@ class ExcelWriter:
             work_sheet.auto_filter.ref = full_range
             wb.save(excel_location)
             message_excel = "Baza de date cu pacienti este transferata si disponibila pe {}".format(excel_location)
+            message_warning = "VA ROG NU EFECTUATI NICI O OPERATIE CAT TIMP VIZUALIZATI FISIERUL EXCEL.\n APLICATIA VA RULA NORMAL DUPA INCHIDEREA EXCELULUI"
             messagebox.showinfo("EXCEL CREATED", message=message_excel)
+            messagebox.showinfo("FARA OPERATII", message=message_warning)
             os.system(excel_location)
         except:
             messagebox.showerror("INCHIDETI FISIER EXCEL",

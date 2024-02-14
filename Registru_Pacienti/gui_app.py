@@ -17,7 +17,7 @@ class GuiApp:
 
     def __init__(self):
         self.table_name = "Patient_registry"
-        self.pictures_folder = os.path.dirname(os.getcwd())
+        self.pictures_folder = os.getcwd()
         self.checker_sql = CheckSqlCommands()
         self.checker_field = CheckFields()
         self.writer = ExcelWriter()
@@ -315,7 +315,7 @@ class GuiApp:
         image_ico = os.path.join(self.pictures_folder, constants_pacienti.PICTURE_FOLDER,
                                  constants_pacienti.SOMN_ICO_IMAGE)
         root_add.iconbitmap(image_ico)
-        root_add.geometry("1200x900")
+        root_add.geometry("1000x900")
         root_add["bg"] = "#5BBD2A"
         root_add.resizable(NO, NO)
         # stringvar variables
@@ -343,7 +343,7 @@ class GuiApp:
         root_add.protocol("WM_DELETE_WINDOW", self.cancel_x_button)
         # create first frame for title label
         frame_title = LabelFrame(root_add, fg="#EEEBF3", bg="#5BBD2A", font=("Helvetica", 25, "bold"), bd=5,
-                                 cursor="target", width=1100, height=850, labelanchor="n", text="ADAUGARE PACIENT",
+                                 cursor="target", width=900, height=750, labelanchor="n", text="ADAUGARE PACIENT",
                                  relief=tkinter.GROOVE)
         frame_title.grid(padx=42, pady=10, row=0, column=0, )  # put it in the middle
         frame_title.grid_rowconfigure(0, weight=1)
@@ -352,7 +352,7 @@ class GuiApp:
         # create frame for personal settings
         frame_personal_info = LabelFrame(frame_title, fg="#EEEBF3", bg="#5BBD2A", font=("Helvetica", 15, "bold"),
                                          bd=5,
-                                         cursor="target", width=350, height=800, labelanchor=tkinter.N,
+                                         cursor="target", width=250, height=800, labelanchor=tkinter.N,
                                          text="DATE PERSONALE",
                                          relief=tkinter.GROOVE)
         frame_personal_info.grid(padx=10, pady=10, row=0, column=0, sticky=tkinter.EW)  # put it in the middle
@@ -480,7 +480,7 @@ class GuiApp:
         '''
         frame_patient_medical = LabelFrame(frame_title, fg="#EEEBF3", bg="#5BBD2A", font=("Helvetica", 15, "bold"),
                                            bd=5,
-                                           cursor="target", width=700, height=800, labelanchor="n",
+                                           cursor="target", width=500, height=800, labelanchor="n",
                                            text="DATE MEDICALE",
                                            relief=tkinter.GROOVE)
         frame_patient_medical.grid(padx=10, pady=10, row=0, column=1, )  # put it in the middle
@@ -490,14 +490,14 @@ class GuiApp:
         doctor_ticket_label = Label(frame_patient_medical, text="BILET TRIMITERE*", justify="center",
                                     font=("Helvetica", 11, "bold"),
                                     cursor="star", fg="#3D91C4", bg="#5BBD2A")
-        doctor_ticket_label.place(x=40, y=30)
+        doctor_ticket_label.place(x=20, y=30)
         doctor_ticket_yes = Checkbutton(frame_patient_medical, text="YES", variable=has_doctor_ticket_value_yes,
                                         onvalue="YES", offvalue="", bg="#5BBD2A",
                                         command=lambda: self.handle_ticket_medical_yes(has_doctor_ticket_value_yes,
                                                                                        has_doctor_ticket_value_general,
                                                                                        ticket_number,
                                                                                        doctor_ticket_no))
-        doctor_ticket_yes.place(x=195, y=30)
+        doctor_ticket_yes.place(x=175, y=30)
         doctor_ticket_yes.deselect()
         doctor_ticket_no = Checkbutton(frame_patient_medical, text="NO", variable=has_doctor_ticket_value_no,
                                        onvalue="NO", offvalue="", bg="#5BBD2A",
@@ -505,46 +505,46 @@ class GuiApp:
                                                                                      has_doctor_ticket_value_general,
                                                                                      ticket_number,
                                                                                      doctor_ticket_yes))
-        doctor_ticket_no.place(x=320, y=30)
+        doctor_ticket_no.place(x=300, y=30)
         doctor_ticket_no.deselect()
         ticket_number_label = Label(frame_patient_medical, text="COD BILET", justify="center",
                                     font=("Helvetica", 11, "bold"),
                                     cursor="star", fg="#3D91C4", bg="#5BBD2A")
-        ticket_number_label.place(x=40, y=70)
-        ticket_number = Entry(frame_patient_medical, width=23, justify="center", font=("Helvetica", 9, "bold"),
+        ticket_number_label.place(x=20, y=70)
+        ticket_number = Entry(frame_patient_medical, width=18, justify="center", font=("Helvetica", 9, "bold"),
                               cursor="target", bg="#D4E2D0", state=tkinter.DISABLED)
-        ticket_number.place(x=200, y=70)
+        ticket_number.place(x=175, y=70)
         # anamneza
         anamneza_label = Label(frame_patient_medical, text="ANAMNEZA", justify="center",
                                font=("Helvetica", 11, "bold"),
                                cursor="star", fg="#3D91C4", bg="#5BBD2A")
-        anamneza_label.place(x=40, y=150)
-        anamneza = Text(frame_patient_medical, width=65, height=10, font=("Helvetica", 9, "bold"),
+        anamneza_label.place(x=20, y=150)
+        anamneza = Text(frame_patient_medical, width=42, height=8, font=("Helvetica", 9, "bold"),
                         cursor="target", bd=4, bg="#C8E6F0", relief=GROOVE, wrap=WORD, highlightcolor="#907AFB",
                         highlightbackground="#907AFB")
-        anamneza.place(x=200, y=110)
+        anamneza.place(x=160, y=110)
         my_scrollbar = Scrollbar(frame_patient_medical, orient=tkinter.VERTICAL, command=anamneza.yview, )
         anamneza.configure(yscrollcommand=my_scrollbar.set, )
-        my_scrollbar.place(x=660, y=110, height=160)
+        my_scrollbar.place(x=463, y=110, height=130)
         '''apnea part'''
         frame_apnea = LabelFrame(frame_patient_medical, fg="#EEEBF3", bg="#5BBD2A", font=("Helvetica", 13, "bold"),
                                  bd=5,
-                                 cursor="target", width=640, height=170, labelanchor="n",
+                                 cursor="target", width=460, height=170, labelanchor="n",
                                  text="APNEE",
                                  relief=tkinter.GROOVE)
-        frame_apnea.place(x=40, y=270)
+        frame_apnea.place(x=20, y=270)
         # apnea buttons
         has_apnea_label = Label(frame_apnea, text="APNEE*", justify="center",
                                 font=("Helvetica", 11, "bold"),
                                 cursor="star", fg="#3D91C4", bg="#5BBD2A")
-        has_apnea_label.place(x=190, y=10)
+        has_apnea_label.place(x=110, y=10)
         has_apnea_yes = Checkbutton(frame_apnea, text="YES", variable=has_apnea_value_yes,
                                     onvalue="YES", offvalue="", bg="#5BBD2A",
                                     command=lambda: self.handle_apnea_buton_yes(has_apnea_value_yes,
                                                                                 has_apnea_value_general, apnea_type,
                                                                                 mask_type, compliance, pressure,
                                                                                 has_apnea_no))
-        has_apnea_yes.place(x=265, y=10)
+        has_apnea_yes.place(x=185, y=10)
         has_apnea_yes.deselect()
         has_apnea_no = Checkbutton(frame_apnea, text="NO", variable=has_apnea_value_no,
                                    onvalue="NO", offvalue="", bg="#5BBD2A",
@@ -555,85 +555,85 @@ class GuiApp:
                                                                               compliance,
                                                                               pressure,
                                                                               has_apnea_yes))
-        has_apnea_no.place(x=375, y=10)
+        has_apnea_no.place(x=295, y=10)
         has_apnea_no.deselect()
         # apnea type
         label_apnea_type = Label(frame_apnea, text="TIP APNEE", justify="center",
-                                 font=("Helvetica", 11, "bold"),
+                                 font=("Helvetica", 10, "bold"),
                                  cursor="star", fg="#3D91C4", bg="#5BBD2A")
-        label_apnea_type.place(x=30, y=50)
+        label_apnea_type.place(x=20, y=50)
         apnea_type = OptionMenu(frame_apnea, apnea_type_value, *constants_pacienti.APNEA_TYPE, )
-        apnea_type.config(bg="#07A52D", font=("Helvetica", 11, "bold"), fg="#DEFFE6", width=16,
+        apnea_type.config(bg="#07A52D", font=("Helvetica", 8, "bold"), fg="#DEFFE6", width=12,
                           state=tkinter.DISABLED)
-        apnea_type.place(x=120, y=48)
+        apnea_type.place(x=110, y=48)
         # mask type
         label_mask_type = Label(frame_apnea, text="TIP MASCA", justify="center",
-                                font=("Helvetica", 11, "bold"),
+                                font=("Helvetica", 10, "bold"),
                                 cursor="star", fg="#3D91C4", bg="#5BBD2A", )
-        label_mask_type.place(x=30, y=100)
+        label_mask_type.place(x=20, y=100)
         mask_type = OptionMenu(frame_apnea, mask_type_value, *constants_pacienti.MASK_TYPE, )
-        mask_type.config(bg="#07A52D", font=("Helvetica", 11, "bold"), fg="#DEFFE6", width=16,
+        mask_type.config(bg="#07A52D", font=("Helvetica", 8, "bold"), fg="#DEFFE6", width=12,
                          state=tkinter.DISABLED)
-        mask_type.place(x=120, y=96)
+        mask_type.place(x=110, y=96)
         # compliance
         label_compliance = Label(frame_apnea, text="COMPLIANTA", justify="center",
-                                 font=("Helvetica", 11, "bold"),
+                                 font=("Helvetica", 10, "bold"),
                                  cursor="star", fg="#3D91C4", bg="#5BBD2A")
-        label_compliance.place(x=340, y=50)
-        compliance = Entry(frame_apnea, width=23, justify="center", font=("Helvetica", 9, "bold"),
+        label_compliance.place(x=230, y=50)
+        compliance = Entry(frame_apnea, width=16, justify="center", font=("Helvetica", 9, "bold"),
                            cursor="target", bg="#D4E2D0", state=tkinter.DISABLED)
-        compliance.place(x=450, y=50)
+        compliance.place(x=330, y=50)
         # pressure
         label_pressure = Label(frame_apnea, text="PRESIUNE", justify="center",
-                               font=("Helvetica", 11, "bold"),
+                               font=("Helvetica", 10, "bold"),
                                cursor="star", fg="#3D91C4", bg="#5BBD2A")
-        label_pressure.place(x=340, y=100)
-        pressure = Entry(frame_apnea, width=23, justify="center", font=("Helvetica", 9, "bold"),
+        label_pressure.place(x=230, y=100)
+        pressure = Entry(frame_apnea, width=16, justify="center", font=("Helvetica", 9, "bold"),
                          cursor="target", bg="#D4E2D0", state=tkinter.DISABLED)
-        pressure.place(x=450, y=100)
+        pressure.place(x=330, y=100)
 
         # known diseases
         diseases_label = Label(frame_patient_medical, text="BOLI CUNOSCUTE*", justify="center",
                                font=("Helvetica", 11, "bold"),
                                cursor="star", fg="#3D91C4", bg="#5BBD2A")
-        diseases_label.place(x=40, y=480)
+        diseases_label.place(x=20, y=480)
         has_diseases_yes = Checkbutton(frame_patient_medical, text="YES", variable=has_disease_value_yes,
                                        onvalue="YES", offvalue="", bg="#5BBD2A",
                                        command=lambda: self.handle_disease_buton_yes(has_disease_value_yes,
                                                                                      has_disease_value_general,
                                                                                      disease_section,
                                                                                      has_diseases_no))
-        has_diseases_yes.place(x=195, y=480)
+        has_diseases_yes.place(x=175, y=480)
         has_diseases_no = Checkbutton(frame_patient_medical, text="NO", variable=has_disease_value_no,
                                       onvalue="NO", offvalue="", bg="#5BBD2A",
                                       command=lambda: self.handle_disease_buton_no(has_disease_value_no,
                                                                                    has_disease_value_general,
                                                                                    disease_section,
                                                                                    has_diseases_yes))
-        has_diseases_no.place(x=250, y=480)
-        disease_section = Text(frame_patient_medical, width=46, height=7, font=("Helvetica", 9, "bold"),
+        has_diseases_no.place(x=300, y=480)
+        disease_section = Text(frame_patient_medical, width=42, height=5, font=("Helvetica", 9, "bold"),
                                cursor="target", bd=4, bg="#C8E6F0", relief=GROOVE, wrap=WORD,
                                highlightcolor="#907AFB",
                                highlightbackground="#907AFB", state=tkinter.DISABLED)
-        disease_section.place(x=330, y=480)
+        disease_section.place(x=160, y=500)
         my_scrollbar_disease = Scrollbar(frame_patient_medical, orient=tkinter.VERTICAL,
                                          command=disease_section.yview, )
         disease_section.configure(yscrollcommand=my_scrollbar_disease.set, )
-        my_scrollbar_disease.place(x=660, y=480, height=117)
+        my_scrollbar_disease.place(x=463, y=500, height=84)
         # recommendation part
         recommendation_label = Label(frame_patient_medical, text="RECOMANDARE", justify="center",
                                      font=("Helvetica", 11, "bold"),
                                      cursor="star", fg="#3D91C4", bg="#5BBD2A")
-        recommendation_label.place(x=40, y=630)
-        recommendation_section = Text(frame_patient_medical, width=65, height=8.3, font=("Helvetica", 9, "bold"),
+        recommendation_label.place(x=20, y=630)
+        recommendation_section = Text(frame_patient_medical, width=42, height=7, font=("Helvetica", 9, "bold"),
                                       cursor="target", bd=4, bg="#C8E6F0", relief=GROOVE, wrap=WORD,
                                       highlightcolor="#907AFB",
                                       highlightbackground="#907AFB")
-        recommendation_section.place(x=200, y=630)
+        recommendation_section.place(x=160, y=630)
         my_scrollbar_recommendation = Scrollbar(frame_patient_medical, orient=tkinter.VERTICAL,
                                                 command=recommendation_section.yview, )
         recommendation_section.configure(yscrollcommand=my_scrollbar_recommendation.set, )
-        my_scrollbar_recommendation.place(x=660, y=630, height=130)
+        my_scrollbar_recommendation.place(x=463, y=630, height=115)
         # buttons
         ok_button = Button(root_add, text="SAVE", width=15, height=2, fg="#1E2729", bg="#248B48",
                            font=("Helvetica", 9, "bold"),
@@ -646,14 +646,14 @@ class GuiApp:
                                                         has_disease_value_yes.get(),
                                                         has_disease_value_no.get())
                            )
-        ok_button.place(x=60, y=817)
+        ok_button.place(x=60, y=75)
         clear_button = Button(root_add, text="CLEAR", width=15, height=2, fg="#1E2729", bg="#F0FCFB",
                               font=("Helvetica", 9, "bold"),
                               command=self.clear_form_add)
-        clear_button.place(x=200, y=817)
+        clear_button.place(x=200, y=75)
         cancel_button = Button(root_add, text="CANCEL", width=15, height=2, fg="#1E2729", bg="#E8E7D8",
                                font=("Helvetica", 9, "bold"), command=self.cancel_form_add)
-        cancel_button.place(x=340, y=817)
+        cancel_button.place(x=340, y=75)
 
         root_add.mainloop()
 
@@ -793,7 +793,7 @@ class GuiApp:
         frame_treeview.grid(padx=25, pady=10, row=0, column=0, )  # put it in the middle
         frame_treeview.grid_rowconfigure(0, weight=1)
         frame_treeview.grid_columnconfigure(0, weight=1)
-        # create tree to show footballers
+        # create tree to show patients
         columns = ("ID", "PRENUME", "NUME", "CNP", "APNEE", "TIP_APNEE", "PRESIUNE")
         tree_patients = ttk.Treeview(frame_treeview, show='headings', columns=columns, height=15, )
         # ADD THE COLUMNS
@@ -845,6 +845,7 @@ class GuiApp:
                                font=("Helvetica", 9, "bold"), command=self.cancel_treeview_delete)
         ok_button.place(x=150, y=343)
         cancel_button.place(x=480, y=343)
+        root_delete_treeview.mainloop()
 
     def handle_radio_button_date(self, value_date, *args):
         # value_date = selection_option1
@@ -1045,6 +1046,7 @@ class GuiApp:
                                font=("Helvetica", 9, "bold"), command=self.cancel_form_delete)
         ok_button.place(x=150, y=215)
         cancel_button.place(x=500, y=215)
+        root_delete.mainloop()
 
     '''
     EDIT PART
@@ -1125,8 +1127,6 @@ class GuiApp:
         list_modifications.append(disease_section_update.get("1.0", "end-1c").upper())
         list_modifications.append(recommendation_section_update.get("1.0", "end-1c").upper())
 
-        print(list_record_entries)
-        print(list_modifications)
         # make the comparison
         if self.checker_sql.compare_list(list_record_entries[0], list_modifications):
             messagebox.showerror("FARA MODIFICARI", "NU EXISTA MODIFICARI LA DATE")
@@ -1165,7 +1165,7 @@ class GuiApp:
                               "cnp_upd": str(cnp_entry_update.get()),
                               "telephone_upd": str(telephone_number_entry_update.get()),
                               "address_street_upd": address_entry_street_update.get().upper(),
-                              "address_locality_upd":address_entry_locality_update.get().upper(),
+                              "address_locality_upd": address_entry_locality_update.get().upper(),
                               "address_region_upd": judet_value_update.get().upper(),
                               "insurance_val_upd": has_insurance_value_general_update.get(),
                               "insurance_type_upd": asigurare_value_update.get(),
@@ -1704,6 +1704,7 @@ class GuiApp:
         name_label_custom.place(x=70, y=40)
         cnp_label_custom.place(x=70, y=80)
         date_label_custom.place(x=70, y=120)
+        root_update.mainloop()
 
     def view_edit_records(self, table_name, option, select_date, first_name, last_name, cnp):
         '''MAKE CHECKS'''
@@ -1848,8 +1849,8 @@ class GuiApp:
                                font=("Helvetica", 9, "bold"), command=self.cancel_treeview_edit)
         cancel_button.place(x=250, y=343)
         # add bind function to treeview
-        # todo open_entry_button
         tree_patients_edit.bind("<Double-Button-1>", lambda event: self.open_entry(self.table_name, event))
+        root_edit_treeview.mainloop()
 
     def cancel_form_edit(self):
         root_edit.destroy()
@@ -2002,6 +2003,7 @@ class GuiApp:
                                font=("Helvetica", 9, "bold"), command=self.cancel_form_edit)
         ok_button.place(x=150, y=215)
         cancel_button.place(x=500, y=215)
+        root_edit.mainloop()
 
     '''
     Main gui creation
