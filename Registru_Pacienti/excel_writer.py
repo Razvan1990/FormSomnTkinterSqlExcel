@@ -43,7 +43,7 @@ class ExcelWriter:
             # all columns with excel data
             list_index_columns = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q",
                                   "R",
-                                  "S", "T", "U", "V"]
+                                  "S", "T", "U", "V", "W"]
             # MAKE THE FIRST COLUMN AS AN ID
             work_sheet["A1"].value = "ID"
             work_sheet["A1"].alignment = Alignment(horizontal="center")
