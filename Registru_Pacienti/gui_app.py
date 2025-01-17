@@ -157,7 +157,6 @@ class GuiApp:
         disease_section["state"] = tkinter.DISABLED
         recommendation_section.delete("1.0", END)
         AHI.delete("0", END)
-      
 
     def sql_add(self, table_name, cnp, selection_date, last_name, telephone_number, *args):  # args are the checkbuttons
         database = os.path.join(constants_pacienti.DATABASE_FOLDER, constants_pacienti.NAME_DATABASE)
@@ -596,15 +595,15 @@ class GuiApp:
         pressure = Entry(frame_apnea, width=16, justify="center", font=("Helvetica", 9, "bold"),
                          cursor="target", bg="#D4E2D0", state=tkinter.DISABLED)
         pressure.place(x=330, y=100)
-          # AHI
+        # AHI
         ahi_label = Label(frame_patient_medical, text="AHI", justify="center",
                           font=("Helvetica", 11, "bold"),
                           cursor="star", fg="#3D91C4", bg="#5BBD2A")
-        ahi_label.place(x=40, y=460)
+        ahi_label.place(x=20, y=450)
         AHI = Entry(frame_patient_medical, width=14, justify="center", font=("Helvetica", 9, "bold"),
                     cursor="target",
                     bg="#D4E2D0")
-        AHI.place(x=200, y=460)
+        AHI.place(x=180, y=450)
         # known diseases
         diseases_label = Label(frame_patient_medical, text="BOLI CUNOSCUTE*", justify="center",
                                font=("Helvetica", 11, "bold"),
@@ -624,15 +623,15 @@ class GuiApp:
                                                                                    disease_section,
                                                                                    has_diseases_yes))
         has_diseases_no.place(x=300, y=490)
-        disease_section = Text(frame_patient_medical, width=42, height=5, font=("Helvetica", 9, "bold"),
+        disease_section = Text(frame_patient_medical, width=42, height=6, font=("Helvetica", 9, "bold"),
                                cursor="target", bd=4, bg="#C8E6F0", relief=GROOVE, wrap=WORD,
                                highlightcolor="#907AFB",
                                highlightbackground="#907AFB", state=tkinter.DISABLED)
-        disease_section.place(x=160, y=500)
+        disease_section.place(x=160, y=520)
         my_scrollbar_disease = Scrollbar(frame_patient_medical, orient=tkinter.VERTICAL,
                                          command=disease_section.yview, )
         disease_section.configure(yscrollcommand=my_scrollbar_disease.set, )
-        my_scrollbar_disease.place(x=463, y=500, height=84)
+        my_scrollbar_disease.place(x=463, y=520, height=100)
         # recommendation part
         recommendation_label = Label(frame_patient_medical, text="RECOMANDARE", justify="center",
                                      font=("Helvetica", 11, "bold"),
@@ -1140,7 +1139,6 @@ class GuiApp:
         list_modifications.append(disease_section_update.get("1.0", "end-1c").upper())
         list_modifications.append(recommendation_section_update.get("1.0", "end-1c").upper())
         list_modifications.append(AHI_update.get().upper())
-
         # make the comparison
         if self.checker_sql.compare_list(list_record_entries[0], list_modifications):
             messagebox.showerror("FARA MODIFICARI", "NU EXISTA MODIFICARI LA DATE")
@@ -1171,7 +1169,6 @@ class GuiApp:
                             BOLI=:disease_types_upd,
                             RECOMANDARE=:recommendation_upd,
                             AHI=:ahi_upd WHERE oid=:id""",
-                            
 
                           # dummy dictionary
                           {
@@ -1619,11 +1616,11 @@ class GuiApp:
         AHI_label_update = Label(frame_patient_medical_update, text="AHI", justify="center",
                                  font=("Helvetica", 11, "bold"),
                                  cursor="star", fg="#C6E744", bg="#2092B0")
-        AHI_label_update.place(x=20, y=460)
+        AHI_label_update.place(x=20, y=450)
         AHI_update = Entry(frame_patient_medical_update, width=14, justify="center", font=("Helvetica", 9, "bold"),
                            cursor="target",
                            bg="#D4E2D0")
-        AHI_update.place(x=200, y=460)
+        AHI_update.place(x=180, y=450)
         # known diseases
         diseases_label_update = Label(frame_patient_medical_update, text="BOLI CUNOSCUTE*", justify="center",
                                       font=("Helvetica", 11, "bold"),
@@ -1657,11 +1654,11 @@ class GuiApp:
                                       cursor="target", bd=4, bg="#C8E6F0", relief=GROOVE, wrap=WORD,
                                       highlightcolor="#907AFB",
                                       highlightbackground="#907AFB", )
-        disease_section_update.place(x=160, y=500)
+        disease_section_update.place(x=160, y=520)
         my_scrollbar_disease_update = Scrollbar(frame_patient_medical_update, orient=tkinter.VERTICAL,
                                                 command=disease_section_update.yview, )
         disease_section_update.configure(yscrollcommand=my_scrollbar_disease_update.set, )
-        my_scrollbar_disease_update.place(x=463, y=500, height=84)
+        my_scrollbar_disease_update.place(x=463, y=520, height=100)
         # recommendation part
         recommendation_label_update = Label(frame_patient_medical_update, text="RECOMANDARE", justify="center",
                                             font=("Helvetica", 11, "bold"),
