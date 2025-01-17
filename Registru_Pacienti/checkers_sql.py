@@ -63,7 +63,7 @@ class CheckSqlCommands:
             (DATA text, PRENUME text, NUME text, CNP text, TELEFON text, STRADA text,LOCALITATE text,
             JUDET text, ASIGURARE text,TIP_ASIGURARE text,BILET_TRIMITERE text, NUMAR_BILET text, ANAMNEZA text,
              APNEE text, TIP_APNEE text, TIP_MASCA text, COMPLIANTA text, PRESIUNE text, BOLI_CUNOSCUTE text, BOLI text,
-             RECOMANDARE text);""")
+             RECOMANDARE text, AHI text);""")
         connection.commit()
         connection.close()
 

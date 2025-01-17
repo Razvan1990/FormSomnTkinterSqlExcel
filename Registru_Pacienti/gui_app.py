@@ -156,6 +156,8 @@ class GuiApp:
         disease_section.delete("1.0", END)
         disease_section["state"] = tkinter.DISABLED
         recommendation_section.delete("1.0", END)
+        AHI.delete("0", END)
+      
 
     def sql_add(self, table_name, cnp, selection_date, last_name, telephone_number, *args):  # args are the checkbuttons
         database = os.path.join(constants_pacienti.DATABASE_FOLDER, constants_pacienti.NAME_DATABASE)
@@ -225,7 +227,8 @@ class GuiApp:
                                          :PRESIUNE,
                                          :BOLI_CUNOSCUTE,
                                          :BOLI,
-                                         :RECOMANDARE)""",
+                                         :RECOMANDARE,
+                                         :AHI)""",
                           # dummy dictionary
                           {
                               "DATA": cal.get_date(),
@@ -248,7 +251,8 @@ class GuiApp:
                               "PRESIUNE": pressure.get().upper(),
                               "BOLI_CUNOSCUTE": has_disease_value_general.get().upper(),
                               "BOLI": disease_section.get("1.0", END).upper(),
-                              "RECOMANDARE": recommendation_section.get("1.0", END).upper()
+                              "RECOMANDARE": recommendation_section.get("1.0", END).upper(),
+                              "AHI": AHI.get().upper()
                           }
                           )
         connection.commit()
@@ -286,6 +290,7 @@ class GuiApp:
         global mask_type
         global compliance
         global pressure
+        global AHI
         global has_diseases_yes
         global has_diseases_no
         # textareas
@@ -591,26 +596,34 @@ class GuiApp:
         pressure = Entry(frame_apnea, width=16, justify="center", font=("Helvetica", 9, "bold"),
                          cursor="target", bg="#D4E2D0", state=tkinter.DISABLED)
         pressure.place(x=330, y=100)
-
+          # AHI
+        ahi_label = Label(frame_patient_medical, text="AHI", justify="center",
+                          font=("Helvetica", 11, "bold"),
+                          cursor="star", fg="#3D91C4", bg="#5BBD2A")
+        ahi_label.place(x=40, y=460)
+        AHI = Entry(frame_patient_medical, width=14, justify="center", font=("Helvetica", 9, "bold"),
+                    cursor="target",
+                    bg="#D4E2D0")
+        AHI.place(x=200, y=460)
         # known diseases
         diseases_label = Label(frame_patient_medical, text="BOLI CUNOSCUTE*", justify="center",
                                font=("Helvetica", 11, "bold"),
                                cursor="star", fg="#3D91C4", bg="#5BBD2A")
-        diseases_label.place(x=20, y=480)
+        diseases_label.place(x=20, y=490)
         has_diseases_yes = Checkbutton(frame_patient_medical, text="YES", variable=has_disease_value_yes,
                                        onvalue="YES", offvalue="", bg="#5BBD2A",
                                        command=lambda: self.handle_disease_buton_yes(has_disease_value_yes,
                                                                                      has_disease_value_general,
                                                                                      disease_section,
                                                                                      has_diseases_no))
-        has_diseases_yes.place(x=175, y=480)
+        has_diseases_yes.place(x=175, y=490)
         has_diseases_no = Checkbutton(frame_patient_medical, text="NO", variable=has_disease_value_no,
                                       onvalue="NO", offvalue="", bg="#5BBD2A",
                                       command=lambda: self.handle_disease_buton_no(has_disease_value_no,
                                                                                    has_disease_value_general,
                                                                                    disease_section,
                                                                                    has_diseases_yes))
-        has_diseases_no.place(x=300, y=480)
+        has_diseases_no.place(x=300, y=490)
         disease_section = Text(frame_patient_medical, width=42, height=5, font=("Helvetica", 9, "bold"),
                                cursor="target", bd=4, bg="#C8E6F0", relief=GROOVE, wrap=WORD,
                                highlightcolor="#907AFB",
@@ -624,16 +637,16 @@ class GuiApp:
         recommendation_label = Label(frame_patient_medical, text="RECOMANDARE", justify="center",
                                      font=("Helvetica", 11, "bold"),
                                      cursor="star", fg="#3D91C4", bg="#5BBD2A")
-        recommendation_label.place(x=20, y=630)
+        recommendation_label.place(x=20, y=640)
         recommendation_section = Text(frame_patient_medical, width=42, height=7, font=("Helvetica", 9, "bold"),
                                       cursor="target", bd=4, bg="#C8E6F0", relief=GROOVE, wrap=WORD,
                                       highlightcolor="#907AFB",
                                       highlightbackground="#907AFB")
-        recommendation_section.place(x=160, y=630)
+        recommendation_section.place(x=160, y=640)
         my_scrollbar_recommendation = Scrollbar(frame_patient_medical, orient=tkinter.VERTICAL,
                                                 command=recommendation_section.yview, )
         recommendation_section.configure(yscrollcommand=my_scrollbar_recommendation.set, )
-        my_scrollbar_recommendation.place(x=463, y=630, height=115)
+        my_scrollbar_recommendation.place(x=463, y=640, height=115)
         # buttons
         ok_button = Button(root_add, text="SAVE", width=15, height=2, fg="#1E2729", bg="#248B48",
                            font=("Helvetica", 9, "bold"),
@@ -1126,6 +1139,7 @@ class GuiApp:
         list_modifications.append(has_disease_value_general_update.get())
         list_modifications.append(disease_section_update.get("1.0", "end-1c").upper())
         list_modifications.append(recommendation_section_update.get("1.0", "end-1c").upper())
+        list_modifications.append(AHI_update.get().upper())
 
         # make the comparison
         if self.checker_sql.compare_list(list_record_entries[0], list_modifications):
@@ -1155,7 +1169,9 @@ class GuiApp:
                             PRESIUNE=:pressure_upd,
                             BOLI_CUNOSCUTE=:disease_val_upd,
                             BOLI=:disease_types_upd,
-                            RECOMANDARE=:recommendation_upd WHERE oid=:id""",
+                            RECOMANDARE=:recommendation_upd,
+                            AHI=:ahi_upd WHERE oid=:id""",
+                            
 
                           # dummy dictionary
                           {
@@ -1180,6 +1196,7 @@ class GuiApp:
                               "disease_val_upd": has_disease_value_general_update.get(),
                               "disease_types_upd": disease_section_update.get("1.0", "end-1c").upper(),
                               "recommendation_upd": recommendation_section_update.get("1.0", "end-1c").upper(),
+                              "ahi_upd": AHI_update.get().upper(),
                               "id": list_record[0]
                           }
                           )
@@ -1248,6 +1265,7 @@ class GuiApp:
         global mask_type_update
         global compliance_update
         global pressure_update
+        global AHI_update
         global has_diseases_yes_update
         global has_diseases_no_update
         # textareas
@@ -1597,11 +1615,20 @@ class GuiApp:
         pressure_update = Entry(frame_apnea_update, width=16, justify="center", font=("Helvetica", 9, "bold"),
                                 cursor="target", bg="#D4E2D0", )
         pressure_update.place(x=330, y=100)
+        # AHI
+        AHI_label_update = Label(frame_patient_medical_update, text="AHI", justify="center",
+                                 font=("Helvetica", 11, "bold"),
+                                 cursor="star", fg="#C6E744", bg="#2092B0")
+        AHI_label_update.place(x=20, y=460)
+        AHI_update = Entry(frame_patient_medical_update, width=14, justify="center", font=("Helvetica", 9, "bold"),
+                           cursor="target",
+                           bg="#D4E2D0")
+        AHI_update.place(x=200, y=460)
         # known diseases
         diseases_label_update = Label(frame_patient_medical_update, text="BOLI CUNOSCUTE*", justify="center",
                                       font=("Helvetica", 11, "bold"),
                                       cursor="star", fg="#C6E744", bg="#2092B0")
-        diseases_label_update.place(x=20, y=480)
+        diseases_label_update.place(x=20, y=490)
         has_diseases_yes_update = Checkbutton(frame_patient_medical_update, text="YES",
                                               variable=has_disease_value_yes_update,
                                               onvalue="YES", offvalue="", bg="#2092B0",
@@ -1610,7 +1637,7 @@ class GuiApp:
                                                   has_disease_value_general_update,
                                                   disease_section_update,
                                                   has_diseases_no_update))
-        has_diseases_yes_update.place(x=175, y=480)
+        has_diseases_yes_update.place(x=175, y=490)
         has_diseases_yes_update.deselect()
         has_diseases_no_update = Checkbutton(frame_patient_medical_update, text="NO",
                                              variable=has_disease_value_no_update,
@@ -1619,7 +1646,7 @@ class GuiApp:
                                                                                           has_disease_value_general_update,
                                                                                           disease_section_update,
                                                                                           has_diseases_yes_update))
-        has_diseases_no_update.place(x=300, y=480)
+        has_diseases_no_update.place(x=300, y=490)
         has_diseases_no_update.deselect()
         # check the value of the disease_general value
         if has_disease_value_general_update.get() == "YES":
@@ -1639,17 +1666,17 @@ class GuiApp:
         recommendation_label_update = Label(frame_patient_medical_update, text="RECOMANDARE", justify="center",
                                             font=("Helvetica", 11, "bold"),
                                             cursor="star", fg="#C6E744", bg="#2092B0")
-        recommendation_label_update.place(x=20, y=630)
+        recommendation_label_update.place(x=20, y=640)
         recommendation_section_update = Text(frame_patient_medical_update, width=42, height=7,
                                              font=("Helvetica", 9, "bold"),
                                              cursor="target", bd=4, bg="#C8E6F0", relief=GROOVE, wrap=WORD,
                                              highlightcolor="#907AFB",
                                              highlightbackground="#907AFB")
-        recommendation_section_update.place(x=160, y=630)
+        recommendation_section_update.place(x=160, y=640)
         my_scrollbar_recommendation_update = Scrollbar(frame_patient_medical_update, orient=tkinter.VERTICAL,
                                                        command=recommendation_section_update.yview, )
         recommendation_section_update.configure(yscrollcommand=my_scrollbar_recommendation_update.set, )
-        my_scrollbar_recommendation_update.place(x=463, y=630, height=115)
+        my_scrollbar_recommendation_update.place(x=463, y=640, height=115)
 
         # buttons
         ok_button_update = Button(root_update, text="UPDATE", width=20, height=2, fg="#1E2729", bg="#248B48",
@@ -1687,6 +1714,7 @@ class GuiApp:
         pressure_update.insert(0, list_record_entries[0][17])
         disease_section_update.insert("1.0", list_record_entries[0][19])
         recommendation_section_update.insert("1.0", list_record_entries[0][20])
+        AHI_update.insert(0, list_record_entries[0][21])
 
         ''''
         CREATE CUSTOM LABELS FOR DATE/NAME/CNP
