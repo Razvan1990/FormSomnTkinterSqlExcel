@@ -1117,6 +1117,7 @@ class GuiApp:
             if self.checkers_fields.check_selected_date(new_day_converted[2:].replace("_", "-")):
                 messagebox.showerror(parent=root_update_appointment_gui, title="DATA IN TRECUT",
                                      message="DATA SELECTATA ESTE IN TRECUT")
+                return
             '''E2. We first check to see if the new_day_converted exists in the list of tables'''
             # get list with all days -> tables
             sql_retrieve_table_command = """SELECT name FROM sqlite_schema WHERE type ='table' """
